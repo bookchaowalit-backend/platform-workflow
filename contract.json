@@ -1,20 +1,60 @@
 {
+  "$schema": "./schema/book-platform.contract.v1.schema.json",
   "schema_version": "book-platform.contract.v1",
   "platform_id": "workflow",
   "repository": "book-workflow-platform",
   "status": "scaffolded",
   "api_version": "v1",
   "data_owner": "book-workflow-platform",
-  "capabilities": ["platform-api", "health", "contract"],
-  "depends_on": [],
+  "capabilities": [
+    "jobs",
+    "queue",
+    "scheduler",
+    "retry",
+    "approval",
+    "execution-history"
+  ],
+  "depends_on": [
+    "identity",
+    "observability"
+  ],
   "current_implementation": {
     "repository": "solo-empire",
-    "source_path": "infra/tasks"
+    "source_path": "infra/tasks",
+    "source_paths": [
+      "infra/tasks",
+      "infra/scripts"
+    ],
+    "source_status": "current-implementation-in-solo-empire"
   },
   "migration": {
     "compatibility_adapter": "required",
     "shadow_parity": "pending",
     "cutover": "pending",
     "rollback": "required"
-  }
+  },
+  "migration_gates": [
+    "durable execution",
+    "retry semantics",
+    "duplicate job protection"
+  ],
+  "surface_doc": "docs/CONTRACT-SURFACE.md",
+  "interfaces": [
+    {
+      "id": "workflow.cli.task-includes",
+      "kind": "cli",
+      "direction": "provides",
+      "name": "Root Taskfile.yml includes infra/tasks/<namespace>.yml (flattened task names)",
+      "status": "current-in-solo-empire",
+      "source": "infra/tasks"
+    },
+    {
+      "id": "workflow.cli.scripts",
+      "kind": "cli",
+      "direction": "provides",
+      "name": "Python/shell job entry points under infra/scripts invoked by tasks",
+      "status": "current-in-solo-empire",
+      "source": "infra/scripts"
+    }
+  ]
 }
