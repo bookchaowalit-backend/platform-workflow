@@ -1,0 +1,8 @@
+system_id: bookchaowalit-backend/book-backend/book-workflow-platform
+prefix: CARD
+brand: "BOOK WORKFLOW PLATFORM"
+subtitle: "ขอบเขต contract ของ platform `workflow` ยังไม่มี runtime"
+footer: "Book Workflow Platform — Product Card"
+color: "#2f4b6e"
+audience: internal
+tier: L0
