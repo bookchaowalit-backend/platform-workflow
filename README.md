@@ -1,4 +1,4 @@
-# book-workflow-platform
+# platform-workflow
 
 `Workflow` platform boundary for the Book Platform portfolio.
 
@@ -12,8 +12,8 @@ provider integration, database writer, credential, or customer payload.
 ## Boundary
 
 - Owner: `bookchaowalit-backend`
-- Repository: `book-workflow-platform`
-- Target remote: `https://github.com/bookchaowalit-backend/book-workflow-platform.git` (published; runtime not activated)
+- Repository: `platform-workflow`
+- Target remote: `https://github.com/bookchaowalit-backend/platform-workflow.git` (published; runtime not activated)
 - Contract: `book-platform.contract.v1`
 - Status: `scaffolded`
 - Data owner: the platform boundary identified in `contract.json`

@@ -2,10 +2,10 @@
   "$schema": "./schema/book-platform.contract.v1.schema.json",
   "schema_version": "book-platform.contract.v1",
   "platform_id": "workflow",
-  "repository": "book-workflow-platform",
+  "repository": "platform-workflow",
   "status": "scaffolded",
   "api_version": "v1",
-  "data_owner": "book-workflow-platform",
+  "data_owner": "platform-workflow",
   "capabilities": [
     "jobs",
     "queue",
