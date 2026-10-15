@@ -28,7 +28,7 @@
     "ci-stays-in-ci": {
       "scheduler_and_execution_state": "GitHub Actions in the repository that owns the checked code",
       "job_logic": "developer-platform conventions",
-      "basis": "CI schedules are not runtime jobs; solo-empire dropped its CI workflows in 5f034945",
+      "basis": "CI schedules are not runtime jobs; solo-empire removed its CI workflows in 3bf3637c, 9f44f602 and 5f034945",
       "decision": "PROPOSED, NOT ACCEPTED"
     },
     "data-capture-rehome": {
@@ -172,7 +172,7 @@
       ]
     },
     "github-actions-run-history": {
-      "summary": "GitHub Actions run list for the solo-empire repository (retention per GitHub settings); the workflow files were removed in 3bf3637c/5f034945, so no new runs are produced.",
+      "summary": "GitHub Actions run list for the solo-empire repository (retention per GitHub settings); the workflow files were removed in 3bf3637c (backup), 9f44f602 (data-lake-cloud-contract, free-cloud-e2e) and 5f034945 (free-resource-upstream-audit, health-check, scorecard), so no new runs are produced.",
       "durable_per_run_record": true,
       "citations": [
         "solo-empire-retired:.github/workflows/health-check.yml:10"
@@ -279,7 +279,7 @@
       "schedule": "0 2 * * *",
       "status": "retired-ci-schedule",
       "timezone": "UTC",
-      "current_owner": "solo-empire (workflow removed in 3bf3637c/5f034945)",
+      "current_owner": "solo-empire (workflow removed in 3bf3637c)",
       "current_runner": "GitHub Actions .github/workflows/backup.yml",
       "target_owner": "ci-stays-in-ci",
       "retry_policy": "github-actions-no-retry",
@@ -294,7 +294,7 @@
       "schedule": "30 2 * * 1",
       "status": "retired-ci-schedule",
       "timezone": "UTC",
-      "current_owner": "solo-empire (workflow removed in 3bf3637c/5f034945)",
+      "current_owner": "solo-empire (workflow removed in 9f44f602)",
       "current_runner": "GitHub Actions .github/workflows/data-lake-cloud-contract.yml",
       "target_owner": "ci-stays-in-ci",
       "retry_policy": "github-actions-no-retry",
@@ -309,7 +309,7 @@
       "schedule": "17 3 * * 1",
       "status": "retired-ci-schedule",
       "timezone": "UTC",
-      "current_owner": "solo-empire (workflow removed in 3bf3637c/5f034945)",
+      "current_owner": "solo-empire (workflow removed in 9f44f602)",
       "current_runner": "GitHub Actions .github/workflows/free-cloud-e2e.yml",
       "target_owner": "ci-stays-in-ci",
       "retry_policy": "github-actions-no-retry",
@@ -324,7 +324,7 @@
       "schedule": "30 1 * * 1",
       "status": "retired-ci-schedule",
       "timezone": "UTC",
-      "current_owner": "solo-empire (workflow removed in 3bf3637c/5f034945)",
+      "current_owner": "solo-empire (workflow removed in 5f034945)",
       "current_runner": "GitHub Actions .github/workflows/free-resource-upstream-audit.yml",
       "target_owner": "ci-stays-in-ci",
       "retry_policy": "github-actions-no-retry",
@@ -339,7 +339,7 @@
       "schedule": "0 */6 * * *",
       "status": "retired-ci-schedule",
       "timezone": "UTC",
-      "current_owner": "solo-empire (workflow removed in 3bf3637c/5f034945)",
+      "current_owner": "solo-empire (workflow removed in 5f034945)",
       "current_runner": "GitHub Actions .github/workflows/health-check.yml",
       "target_owner": "ci-stays-in-ci",
       "retry_policy": "github-actions-no-retry",
@@ -354,7 +354,7 @@
       "schedule": "0 6 * * 1",
       "status": "retired-ci-schedule",
       "timezone": "UTC",
-      "current_owner": "solo-empire (workflow removed in 3bf3637c/5f034945)",
+      "current_owner": "solo-empire (workflow removed in 5f034945)",
       "current_runner": "GitHub Actions .github/workflows/scorecard.yml",
       "target_owner": "ci-stays-in-ci",
       "retry_policy": "github-actions-no-retry",

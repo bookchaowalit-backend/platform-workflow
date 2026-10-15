@@ -56,7 +56,7 @@ idempotency key, execution-history location, citations). Citations below are
 | `local-cron:*` cron_jobs rows with no JOB_MAP entry | 5 | retired orphan rows (never runnable) |
 | `crontab:*` data-lake capture installers | 6 | retired host installers (`9f44f602`) |
 | `windows-task:*` (scraping 7, discovery 1, DNS sync 1) | 9 | retired host installers (`9f44f602`) |
-| `gha:*` GitHub Actions `on: schedule` | 6 | retired CI schedules (`3bf3637c`/`5f034945`) |
+| `gha:*` GitHub Actions `on: schedule` | 6 | retired CI schedules: `backup` removed in `3bf3637c`; `data-lake-cloud-contract`, `free-cloud-e2e` in `9f44f602`; `free-resource-upstream-audit`, `health-check`, `scorecard` in `5f034945` (`git log --diff-filter=D`) |
 
 ### Full table
 
@@ -207,6 +207,12 @@ verified here (no live state inspected).
 9. **Repository-baseline fixtures** (success, duplicate delivery, timeout, provider failure)
    for a workflow runtime do not exist yet; this gate adds the inventory, not those.
 10. **Live install state unknown** for every row (no host inspected).
+11. **Out-of-tree installer not inventoried:** `platform-ops-cli@f3729594` `infra/tasks/data.yml:24-27`
+    (`scraping:news:schedule:plan`) runs `content-news-scraper/setup_cron.sh` from a separate repository that is not one of
+    the three pinned sources; its schedule is not in this fixture.
+12. **CI re-extraction covers platform-ops-cli only.** Hosted CI checks out the public `bookchaowalit/platform-ops-cli`
+    at `f3729594` and re-extracts its 3 timers against the snapshot (`BOO165_REQUIRE_OPS_SOURCE=1`). solo-empire is
+    not reachable from CI, so its 117 records are compared with the real source only by the local re-extraction.
 
 ## Owner decision — PROPOSED, NOT ACCEPTED
 
@@ -250,4 +256,6 @@ the inventory or has a different schedule, when a new source file with a schedul
 unclassified, when retry/idempotency/history/owner fields are missing or undefined, when an owner
 decision is marked accepted, and when the fixture claims a runtime that is not on the tree (a runtime landing
 without a fixture update only prints a warning, so merging PR #1 does not turn CI red). It
-also runs the real extractor against a throwaway Git repository.
+also runs the real extractor against a throwaway Git repository. `SnapshotSourceLineTests` only checks that each
+record is consistent with the source line stored in the same snapshot; comparison with the real repositories is
+`PinnedSourceTests` (local, both sources) and `OpsSourceTests` (hosted CI, platform-ops-cli).

@@ -579,6 +579,22 @@ def validate(inventory: dict[str, Any], snapshot: dict[str, Any]) -> list[str]:
     return errors
 
 
+def verify_source(key: str, repo: Path, snapshot: dict[str, Any]) -> list[str]:
+    """Re-extract one pinned source from a real checkout and diff it against the snapshot."""
+    result = extract_source(repo, SOURCES[key]["sha"])
+    rebuilt = [r.as_json(key) for r in result["records"]]
+    pinned = [r for r in snapshot["records"] if r["source"] == key]
+    problems = []
+    if rebuilt != pinned:
+        missing = {(r["id"], r["schedule"]) for r in rebuilt} - {(r["id"], r["schedule"]) for r in pinned}
+        extra = {(r["id"], r["schedule"]) for r in pinned} - {(r["id"], r["schedule"]) for r in rebuilt}
+        problems.append(f"{key}: snapshot records differ from source (missing {sorted(missing)}, stale {sorted(extra)})")
+    meta = snapshot["sources"][key]
+    if result["unclassified"] != meta["unclassified"] or result["ignored"] != meta["ignored"]:
+        problems.append(f"{key}: classification differs (unclassified {result['unclassified']})")
+    return problems
+
+
 def load(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -591,6 +607,9 @@ def main(argv: list[str] | None = None) -> int:
     ext.add_argument("--platform-ops-cli", type=Path, required=True)
     ext.add_argument("--write", action="store_true", help="overwrite the committed snapshot")
     sub.add_parser("check", help="validate the inventory against the committed snapshot")
+    ver = sub.add_parser("verify-source", help="re-extract one pinned source and compare it with the snapshot")
+    ver.add_argument("--source", choices=sorted(SOURCES), required=True)
+    ver.add_argument("--repo", type=Path, required=True)
     args = parser.parse_args(argv)
 
     if args.command == "extract":
@@ -608,6 +627,15 @@ def main(argv: list[str] | None = None) -> int:
             print("snapshot drift: committed snapshot differs from the pinned sources", file=sys.stderr)
             return 1
         print(f"OK: snapshot matches pinned sources ({len(snapshot['records'])} records)")
+        return 0
+
+    if args.command == "verify-source":
+        problems = verify_source(args.source, args.repo, load(SNAPSHOT_PATH))
+        for problem in problems:
+            print(f"ERROR: {problem}", file=sys.stderr)
+        if problems:
+            return 1
+        print(f"OK: {args.source}@{SOURCES[args.source]['sha'][:8]} re-extracted and matches the snapshot")
         return 0
 
     errors = validate(load(INVENTORY_PATH), load(SNAPSHOT_PATH))

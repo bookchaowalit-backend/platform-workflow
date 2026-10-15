@@ -104,7 +104,14 @@ class InventoryParityTests(unittest.TestCase):
 
 
 class SnapshotSourceLineTests(unittest.TestCase):
-    """Each pinned record's schedule must be re-derivable from its cited source line."""
+    """Snapshot-internal consistency only.
+
+    Each record's schedule must be re-derivable from the source line stored in
+    the same snapshot (``text``). This catches a hand-edit of one field; it does
+    not compare the snapshot with the real repositories. That comparison is
+    PinnedSourceTests (local, both sources) and OpsSourceTests (hosted CI,
+    platform-ops-cli only).
+    """
 
     def test_records_reparse_from_their_source_line(self) -> None:
         _, snapshot = _load()
@@ -188,6 +195,24 @@ class PinnedSourceTests(unittest.TestCase):
         solo, ops = Path(os.environ["SOLO_EMPIRE_ROOT"]), Path(os.environ["PLATFORM_OPS_CLI_ROOT"])
         rebuilt = si.build_snapshot({"solo-empire-retired": solo, "solo-empire-head": solo, "platform-ops-cli": ops})
         self.assertEqual(rebuilt, si.load(si.SNAPSHOT_PATH))
+
+
+_OPS_ROOT = os.environ.get("PLATFORM_OPS_CLI_ROOT")
+_REQUIRE_OPS = os.environ.get("BOO165_REQUIRE_OPS_SOURCE") == "1"
+
+
+@unittest.skipUnless(_OPS_ROOT or _REQUIRE_OPS,
+                     "set PLATFORM_OPS_CLI_ROOT (and BOO165_REQUIRE_OPS_SOURCE=1 in hosted CI) to re-extract platform-ops-cli")
+class OpsSourceTests(unittest.TestCase):
+    """Real-source check that hosted CI can run: platform-ops-cli is public."""
+
+    def test_platform_ops_cli_reextracts_to_snapshot(self) -> None:
+        self.assertTrue(_OPS_ROOT and Path(_OPS_ROOT).is_dir(),
+                        "BOO165_REQUIRE_OPS_SOURCE=1 but PLATFORM_OPS_CLI_ROOT is not a checkout")
+        snapshot = si.load(si.SNAPSHOT_PATH)
+        self.assertEqual(si.verify_source("platform-ops-cli", Path(_OPS_ROOT), snapshot), [])
+        ids = sorted(r["id"] for r in snapshot["records"] if r["source"] == "platform-ops-cli")
+        self.assertEqual(ids, ["systemd:book-dev-dispatch", "systemd:bookchaowalit-org-hub-sync", "systemd:tracker-sync-pilot"])
 
 
 class RuntimeGapTests(unittest.TestCase):
