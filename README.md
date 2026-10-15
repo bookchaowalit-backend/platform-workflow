@@ -6,8 +6,8 @@
 
 This repository owns the `workflow` capability: jobs, queues, schedules, retries, approvals, execution history.
 The current source implementation is recorded as `infra/tasks` in the
-parent registry. This checkout is a local scaffold; it contains no production
-provider integration, database writer, credential, or customer payload.
+parent registry. This checkout includes a locally verified PostgreSQL jobs API and reusable
+worker. It has no activated production provider or deployed runtime.
 
 ## Boundary
 
@@ -15,7 +15,7 @@ provider integration, database writer, credential, or customer payload.
 - Repository: `platform-workflow`
 - Target remote: `https://github.com/bookchaowalit-backend/platform-workflow.git` (published; runtime not activated)
 - Contract: `book-platform.contract.v1`
-- Status: `scaffolded`
+- Status: `pilot`
 - Data owner: the platform boundary identified in `contract.json`
 
 The platform communicates through versioned API or event contracts. Consumers
@@ -63,3 +63,14 @@ Before activating a remote or changing a consumer, add sanitized fixtures for
 success, duplicate delivery, timeout and provider failure; prove tenant/privacy
 isolation; compare the old and new contract; and rehearse rollback on a
 disposable state store. Record the evidence in the parent platform registry.
+
+## Durable runtime
+
+Stage: **implemented-local**, not deployed. See [runtime/API contract](docs/RUNTIME.md)
+and [migration and operations runbook](docs/RUNBOOK.md). The installable Python
+package, Dockerfile and Railway manifest stage an independent API and worker;
+existing task adapters remain the compatibility path until cutover gates pass.
+
+The full runtime suite requires installed dependencies and an explicitly supplied
+disposable PostgreSQL admin `PLATFORM_TEST_DSN`: run `python -m pytest -q`. The
+offline check above continues to validate the unchanged pinned contract schema.
