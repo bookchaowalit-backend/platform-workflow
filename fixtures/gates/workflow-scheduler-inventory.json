@@ -1,0 +1,1316 @@
+{
+  "fixture_version": 1,
+  "issue": "BOO-165",
+  "gate": "Capture scheduler ownership, retry/idempotency behavior, and execution history parity.",
+  "contract": "bookchaowalit/architecture-docs:systems/architecture/platform-repository-split.md",
+  "contract_sha": "ed9418091820f32e5cda6b6634b8e0bf98ec6fe8",
+  "snapshot": "fixtures/gates/workflow-scheduler-source-snapshot.json",
+  "owner_decision": "PROPOSED, NOT ACCEPTED",
+  "live_state_note": "Schedules are what the pinned source declares. Whether any crontab, Task Scheduler task or systemd timer is installed on a host was not inspected and is not claimed.",
+  "platform_workflow_main": {
+    "sha": "1cbd353efe2bb6120f98b41cd5996c24b7334c5e",
+    "retry_idempotency_runtime": "pending-pr-1",
+    "detail": "origin/main ships only contract/scaffold checks; there is no job store, retry, idempotency or execution-history code to exercise. PR #1 (codex/shared-infrastructure-20261015) proposes src/platform_workflow with PostgreSQL-backed idempotent enqueue, max_attempts, exponential backoff and an attempts table; it is unmerged and needs PostgreSQL and third-party packages, so it is not exercised here."
+  },
+  "target_owners": {
+    "local-cron-rehome": {
+      "scheduler_and_execution_state": "platform-workflow",
+      "job_logic": "owning product/ops cell",
+      "basis": "contract: platform-workflow owns execution state, business invariants stay with the caller (platform-repository-split.md#data-และ-interface-ownership); 3bf3637c says jobs return as Railway crons of their owning cells when needed",
+      "decision": "PROPOSED, NOT ACCEPTED"
+    },
+    "retire-orphan": {
+      "scheduler_and_execution_state": "none (retire)",
+      "job_logic": "none",
+      "basis": "no JOB_MAP entry, so the legacy runner could never execute it",
+      "decision": "PROPOSED, NOT ACCEPTED"
+    },
+    "ci-stays-in-ci": {
+      "scheduler_and_execution_state": "GitHub Actions in the repository that owns the checked code",
+      "job_logic": "developer-platform conventions",
+      "basis": "CI schedules are not runtime jobs; solo-empire removed its CI workflows in 3bf3637c, 9f44f602 and 5f034945",
+      "decision": "PROPOSED, NOT ACCEPTED"
+    },
+    "data-capture-rehome": {
+      "scheduler_and_execution_state": "platform-workflow",
+      "job_logic": "owning scraping/data repository (data platform)",
+      "basis": "the installers were plan-only host schedulers; the capture logic belongs to the data products",
+      "decision": "PROPOSED, NOT ACCEPTED"
+    },
+    "ops-timer-rehome": {
+      "scheduler_and_execution_state": "platform-workflow",
+      "job_logic": "platform-ops-cli",
+      "basis": "live ops timers today; moving the timer requires the platform-workflow runtime (not on main)",
+      "decision": "PROPOSED, NOT ACCEPTED"
+    },
+    "retire-workstation": {
+      "scheduler_and_execution_state": "none (developer workstation convenience; retire)",
+      "job_logic": "none",
+      "basis": "logon-triggered hosts-file sync for *.local domains, not a business job",
+      "decision": "PROPOSED, NOT ACCEPTED"
+    }
+  },
+  "retry_policies": {
+    "legacy-local-cron-heal-once": {
+      "summary": "No in-run retry. cron_heal (every 4h) retries an active job whose last_status is 'failed' within the last 24h once (retry_count < 1), through the same per-job lock; a primary success or failure resets retry_count; still-failing jobs alert via Telegram; google_oauth_invalid_grant is marked manual recovery without retry. A lock overlap exits 0 and leaves status untouched. Optional-credential skips count as success.",
+      "max_attempts_per_scheduled_run": 2,
+      "backoff": "next cron_heal tick (<= 4h)",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_healer.py:65",
+        "solo-empire-retired:infra/scripts/utils/cron_healer.py:231",
+        "solo-empire-retired:infra/scripts/utils/cron_healer.py:238",
+        "solo-empire-retired:infra/scripts/utils/cron_healer.py:262",
+        "solo-empire-retired:infra/scripts/utils/cron_healer.py:290",
+        "solo-empire-retired:infra/scripts/utils/cron_runner.py:87",
+        "solo-empire-retired:infra/scripts/utils/cron_runner.py:194",
+        "solo-empire-retired:infra/scripts/utils/cron_runner.py:419",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:1"
+      ]
+    },
+    "legacy-local-cron-heal-self": {
+      "summary": "cron_heal is never retried by itself (get_failed_jobs skips job_type 'cron_heal'); a failed healer run waits for the next 4h tick.",
+      "max_attempts_per_scheduled_run": 1,
+      "backoff": "none",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_healer.py:71",
+        "solo-empire-retired:infra/scripts/utils/cron_healer.py:197"
+      ]
+    },
+    "legacy-local-cron-unrunnable": {
+      "summary": "job_type has a cron_jobs row in migrations but no JOB_MAP entry: cron_runner.py --install skips it and --run refuses it as an unknown job type, so it can neither run nor retry.",
+      "max_attempts_per_scheduled_run": 0,
+      "backoff": "none",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_runner.py:152",
+        "solo-empire-retired:infra/scripts/utils/cron_runner.py:289"
+      ]
+    },
+    "data-lake-capture-in-process-2-attempts": {
+      "summary": "The capture runner is invoked with --attempts 2 (and --timeout-seconds 180 for crontab installers); there is no scheduler-level retry. Overlap is blocked by a lock file.",
+      "max_attempts_per_scheduled_run": 2,
+      "backoff": "inside the capture runner (not visible in the scheduler definition)",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/setup_jobs_cron.sh:71",
+        "solo-empire-retired:infra/scripts/data_lake/setup_seo_cron.sh:61",
+        "solo-empire-retired:infra/scripts/data_lake/setup_market_cron.sh:70",
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:284",
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:288",
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:292"
+      ]
+    },
+    "windows-task-no-retry": {
+      "summary": "Windows Task Scheduler task with no restart settings; MultipleInstances IgnoreNew (discovery) drops overlapping starts; the next trigger is the only retry.",
+      "max_attempts_per_scheduled_run": 1,
+      "backoff": "next trigger",
+      "citations": [
+        "solo-empire-retired:infra/scripts/discovery/setup_windows_task.ps1:77",
+        "solo-empire-retired:infra/self-hosted-stack/setup-auto-dns.ps1:24"
+      ]
+    },
+    "github-actions-no-retry": {
+      "summary": "GitHub Actions on: schedule with no retry step; a failed run waits for the next cron or a manual workflow_dispatch. health-check opens an issue on failure.",
+      "max_attempts_per_scheduled_run": 1,
+      "backoff": "next schedule",
+      "citations": [
+        "solo-empire-retired:.github/workflows/health-check.yml:10"
+      ]
+    },
+    "systemd-oneshot-no-retry": {
+      "summary": "systemd user timer starting a Type=oneshot service with TimeoutStartSec and no Restart=; a running oneshot blocks the next start; Persistent=true catches up one missed run after downtime (org-hub, tracker-sync), Persistent=false does not (book-dev-dispatch).",
+      "max_attempts_per_scheduled_run": 1,
+      "backoff": "next OnCalendar tick",
+      "citations": [
+        "platform-ops-cli:infra/scripts/workflows/install_book_dev_dispatch_timer.py:50",
+        "platform-ops-cli:infra/scripts/workflows/install_book_dev_dispatch_timer.py:67",
+        "platform-ops-cli:infra/scripts/sync/install_org_hub_timer.py:41",
+        "platform-ops-cli:infra/scripts/sync/install_org_hub_timer.py:49",
+        "platform-ops-cli:infra/templates/tracker-sync/tracker-sync-pilot.service:7",
+        "platform-ops-cli:infra/templates/tracker-sync/tracker-sync-pilot.timer:6"
+      ]
+    }
+  },
+  "execution_history_locations": {
+    "legacy-automation-cell": {
+      "summary": "Last-run state only (last_run_at, last_status, retry_count, last_retry_at overwritten on the cron-jobs row of the solo-automation cell) plus a best-effort automation-log append (action_type 'cron', success, executed_at; failures to log are swallowed) and crontab stdout appended to data/logs/cron.log. No per-run record with attempt number, duration or error class.",
+      "durable_per_run_record": false,
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_runner.py:87",
+        "solo-empire-retired:infra/scripts/utils/cron_runner.py:108",
+        "solo-empire-retired:infra/scripts/utils/cron_runner.py:284",
+        "solo-empire-retired:infra/database/migrations/085_retire_operating_intake_automation_tables.sql:1"
+      ]
+    },
+    "data-lake-capture-logs": {
+      "summary": "Crontab stdout appended to data/logs/<feed>-feeds-cron.log plus the runner's --log-dir data/logs/<feed>-capture/. Host-local files only.",
+      "durable_per_run_record": false,
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/setup_jobs_cron.sh:20",
+        "solo-empire-retired:infra/scripts/data_lake/setup_seo_cron.sh:17",
+        "solo-empire-retired:infra/scripts/data_lake/setup_market_cron.sh:17"
+      ]
+    },
+    "windows-scraping-logs": {
+      "summary": "data/logs/windows-scraping/ (2 MB x 3 rotating) plus Task Scheduler LastRunTime/LastTaskResult.",
+      "durable_per_run_record": false,
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:189"
+      ]
+    },
+    "windows-discovery-log": {
+      "summary": "Metadata-only summary in data/logs/discovery-portfolio-scheduled.log (rotating) plus Task Scheduler LastRunTime/LastTaskResult.",
+      "durable_per_run_record": false,
+      "citations": [
+        "solo-empire-retired:infra/scripts/discovery/run_scheduled_acquisition.py:20",
+        "solo-empire-retired:infra/scripts/discovery/setup_windows_task.ps1:12"
+      ]
+    },
+    "windows-task-scheduler-only": {
+      "summary": "No application log; only Windows Task Scheduler's own last-run information.",
+      "durable_per_run_record": false,
+      "citations": [
+        "solo-empire-retired:infra/self-hosted-stack/setup-auto-dns.ps1:26"
+      ]
+    },
+    "github-actions-run-history": {
+      "summary": "GitHub Actions run list for the solo-empire repository (retention per GitHub settings); the workflow files were removed in 3bf3637c (backup), 9f44f602 (data-lake-cloud-contract, free-cloud-e2e) and 5f034945 (free-resource-upstream-audit, health-check, scorecard), so no new runs are produced.",
+      "durable_per_run_record": true,
+      "citations": [
+        "solo-empire-retired:.github/workflows/health-check.yml:10"
+      ]
+    },
+    "systemd-journal": {
+      "summary": "journald for the user unit (journalctl --user -u <unit>) and the timer's last-trigger time; job-specific state: book-dev-dispatch ledger data/runtime/agent-loop/book-dev/linear/state.json, tracker-sync checkpoint.json under .runtime/tracker-sync-pilot, org-hub lock .runtime/org-hub-sync.lock.",
+      "durable_per_run_record": false,
+      "citations": [
+        "platform-ops-cli:infra/scripts/workflows/book_dev_linear_cycle.py:14",
+        "platform-ops-cli:infra/scripts/sync/tracker_sync.py:147",
+        "platform-ops-cli:infra/templates/tracker-sync/tracker-sync-pilot.service:9",
+        "platform-ops-cli:infra/scripts/sync/org_hub_registry.py:465"
+      ]
+    }
+  },
+  "jobs": [
+    {
+      "id": "crontab:book-crypto-data-feeds",
+      "schedule": "0 */4 * * *",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (installer removed in 9f44f602; installs only when run with an explicit lake URI)",
+      "current_runner": "user crontab tag '# book-crypto-data-feeds' -> data-lake capture runner",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "lock file data/market-feeds.lock (overlap); crontab tag '# book-crypto-data-feeds' (install)",
+      "execution_history": "data-lake-capture-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/setup_market_cron.sh:85"
+      ]
+    },
+    {
+      "id": "crontab:book-defi-data-feeds",
+      "schedule": "0 7 * * *",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (installer removed in 9f44f602; installs only when run with an explicit lake URI)",
+      "current_runner": "user crontab tag '# book-defi-data-feeds' -> data-lake capture runner",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "lock file data/market-feeds.lock (overlap); crontab tag '# book-defi-data-feeds' (install)",
+      "execution_history": "data-lake-capture-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/setup_market_cron.sh:88"
+      ]
+    },
+    {
+      "id": "crontab:book-fx-data-feeds",
+      "schedule": "0 */6 * * *",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (installer removed in 9f44f602; installs only when run with an explicit lake URI)",
+      "current_runner": "user crontab tag '# book-fx-data-feeds' -> data-lake capture runner",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "lock file data/market-feeds.lock (overlap); crontab tag '# book-fx-data-feeds' (install)",
+      "execution_history": "data-lake-capture-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/setup_market_cron.sh:87"
+      ]
+    },
+    {
+      "id": "crontab:book-scraping-scheduler",
+      "schedule": "0 */6 * * *",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (installer removed in 9f44f602; installs only when run with an explicit lake URI)",
+      "current_runner": "user crontab tag '# book-scraping-scheduler' -> data-lake capture runner",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "lock file data/jobs-feeds.lock (overlap); crontab tag '# book-scraping-scheduler' (install)",
+      "execution_history": "data-lake-capture-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/setup_jobs_cron.sh:72"
+      ]
+    },
+    {
+      "id": "crontab:book-seo-data-feeds",
+      "schedule": "30 8 * * *",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (installer removed in 9f44f602; installs only when run with an explicit lake URI)",
+      "current_runner": "user crontab tag '# book-seo-data-feeds' -> data-lake capture runner",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "lock file data/seo-feeds.lock (overlap); crontab tag '# book-seo-data-feeds' (install)",
+      "execution_history": "data-lake-capture-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/setup_seo_cron.sh:62"
+      ]
+    },
+    {
+      "id": "crontab:book-stock-data-feeds",
+      "schedule": "0 8 * * *",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (installer removed in 9f44f602; installs only when run with an explicit lake URI)",
+      "current_runner": "user crontab tag '# book-stock-data-feeds' -> data-lake capture runner",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "lock file data/market-feeds.lock (overlap); crontab tag '# book-stock-data-feeds' (install)",
+      "execution_history": "data-lake-capture-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/setup_market_cron.sh:86"
+      ]
+    },
+    {
+      "id": "gha:backup",
+      "schedule": "0 2 * * *",
+      "status": "retired-ci-schedule",
+      "timezone": "UTC",
+      "current_owner": "solo-empire (workflow removed in 3bf3637c)",
+      "current_runner": "GitHub Actions .github/workflows/backup.yml",
+      "target_owner": "ci-stays-in-ci",
+      "retry_policy": "github-actions-no-retry",
+      "idempotency_key": "none (each scheduled run is independent)",
+      "execution_history": "github-actions-run-history",
+      "citations": [
+        "solo-empire-retired:.github/workflows/backup.yml:5"
+      ]
+    },
+    {
+      "id": "gha:data-lake-cloud-contract",
+      "schedule": "30 2 * * 1",
+      "status": "retired-ci-schedule",
+      "timezone": "UTC",
+      "current_owner": "solo-empire (workflow removed in 9f44f602)",
+      "current_runner": "GitHub Actions .github/workflows/data-lake-cloud-contract.yml",
+      "target_owner": "ci-stays-in-ci",
+      "retry_policy": "github-actions-no-retry",
+      "idempotency_key": "none (each scheduled run is independent)",
+      "execution_history": "github-actions-run-history",
+      "citations": [
+        "solo-empire-retired:.github/workflows/data-lake-cloud-contract.yml:20"
+      ]
+    },
+    {
+      "id": "gha:free-cloud-e2e",
+      "schedule": "17 3 * * 1",
+      "status": "retired-ci-schedule",
+      "timezone": "UTC",
+      "current_owner": "solo-empire (workflow removed in 9f44f602)",
+      "current_runner": "GitHub Actions .github/workflows/free-cloud-e2e.yml",
+      "target_owner": "ci-stays-in-ci",
+      "retry_policy": "github-actions-no-retry",
+      "idempotency_key": "none (each scheduled run is independent)",
+      "execution_history": "github-actions-run-history",
+      "citations": [
+        "solo-empire-retired:.github/workflows/free-cloud-e2e.yml:20"
+      ]
+    },
+    {
+      "id": "gha:free-resource-upstream-audit",
+      "schedule": "30 1 * * 1",
+      "status": "retired-ci-schedule",
+      "timezone": "UTC",
+      "current_owner": "solo-empire (workflow removed in 5f034945)",
+      "current_runner": "GitHub Actions .github/workflows/free-resource-upstream-audit.yml",
+      "target_owner": "ci-stays-in-ci",
+      "retry_policy": "github-actions-no-retry",
+      "idempotency_key": "none (each scheduled run is independent)",
+      "execution_history": "github-actions-run-history",
+      "citations": [
+        "solo-empire-retired:.github/workflows/free-resource-upstream-audit.yml:6"
+      ]
+    },
+    {
+      "id": "gha:health-check",
+      "schedule": "0 */6 * * *",
+      "status": "retired-ci-schedule",
+      "timezone": "UTC",
+      "current_owner": "solo-empire (workflow removed in 5f034945)",
+      "current_runner": "GitHub Actions .github/workflows/health-check.yml",
+      "target_owner": "ci-stays-in-ci",
+      "retry_policy": "github-actions-no-retry",
+      "idempotency_key": "none (each scheduled run is independent)",
+      "execution_history": "github-actions-run-history",
+      "citations": [
+        "solo-empire-retired:.github/workflows/health-check.yml:5"
+      ]
+    },
+    {
+      "id": "gha:scorecard",
+      "schedule": "0 6 * * 1",
+      "status": "retired-ci-schedule",
+      "timezone": "UTC",
+      "current_owner": "solo-empire (workflow removed in 5f034945)",
+      "current_runner": "GitHub Actions .github/workflows/scorecard.yml",
+      "target_owner": "ci-stays-in-ci",
+      "retry_policy": "github-actions-no-retry",
+      "idempotency_key": "none (each scheduled run is independent)",
+      "execution_history": "github-actions-run-history",
+      "citations": [
+        "solo-empire-retired:.github/workflows/scorecard.yml:8"
+      ]
+    },
+    {
+      "id": "local-cron:analytics_dashboard",
+      "schedule": "45 1 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run analytics_dashboard",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/analytics_dashboard.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:26",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:73"
+      ]
+    },
+    {
+      "id": "local-cron:auto_archive",
+      "schedule": "0 0 * * 0",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run auto_archive",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/auto_archive.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/010_automation.sql:172",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:38",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:30"
+      ]
+    },
+    {
+      "id": "local-cron:backup_db",
+      "schedule": "0 3 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run backup_db",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/backup_db.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:31",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:68"
+      ]
+    },
+    {
+      "id": "local-cron:book_dev_loop",
+      "schedule": "30 5 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run book_dev_loop",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/book_dev_loop.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/038_book_dev_engineering_loop.sql:54",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:36",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:52"
+      ]
+    },
+    {
+      "id": "local-cron:brave_bookmarks_maintenance",
+      "schedule": "every_4h",
+      "status": "retired-local-cron",
+      "active_in_source": false,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run brave_bookmarks_maintenance",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/brave_bookmarks_maintenance.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/058_register_brave_bookmark_maintenance.sql:54",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:85"
+      ]
+    },
+    {
+      "id": "local-cron:check_notifications",
+      "schedule": "30 0 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run check_notifications",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/check_notifications.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/010_automation.sql:170",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:21",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:27"
+      ]
+    },
+    {
+      "id": "local-cron:cron_heal",
+      "schedule": "0 */4 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run cron_heal",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-self",
+      "idempotency_key": "job_lock:data/locks/cron_heal.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/070_normalize_cron_schedules.sql:5",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:78"
+      ]
+    },
+    {
+      "id": "local-cron:daily_diary",
+      "schedule": "45 4 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run daily_diary",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/daily_diary.lock (overlap guard only; no per-scheduled-run key); date-keyed overwrite of diary/entries/YYYY/MM/DD/auto-daily.md (cron_registry.py:42-44)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/037_register_daily_diary_job.sql:53",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:35",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:44"
+      ]
+    },
+    {
+      "id": "local-cron:data_freshness",
+      "schedule": "0 */6 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run data_freshness",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/data_freshness.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/070_normalize_cron_schedules.sql:7",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:79"
+      ]
+    },
+    {
+      "id": "local-cron:db_health_check",
+      "schedule": "15 1 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run db_health_check",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/db_health_check.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:24",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:34"
+      ]
+    },
+    {
+      "id": "local-cron:decision_brief_daily",
+      "schedule": "30 4 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run decision_brief_daily",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/decision_brief_daily.lock (overlap guard only; no per-scheduled-run key); aggregate files under data/generated only (cron_registry.py:56-57)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/034_register_decision_brief_jobs.sql:53",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:34",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:58"
+      ]
+    },
+    {
+      "id": "local-cron:decision_brief_weekly",
+      "schedule": "15 1 * * 0",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run decision_brief_weekly",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/decision_brief_weekly.lock (overlap guard only; no per-scheduled-run key); aggregate files under data/generated only (cron_registry.py:56-57)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/034_register_decision_brief_jobs.sql:67",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:43",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:59"
+      ]
+    },
+    {
+      "id": "local-cron:decision_review",
+      "schedule": "15 4 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run decision_review",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/decision_review.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/031_register_decision_review_job.sql:48",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:33",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:41"
+      ]
+    },
+    {
+      "id": "local-cron:diary_monthly_summary",
+      "schedule": "0 2 1 * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run diary_monthly_summary",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/diary_monthly_summary.lock (overlap guard only; no per-scheduled-run key); label-keyed overwrite of summaries/<cadence>/<label>.md (cron_registry.py:45-46)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/061_register_diary_summary_jobs.sql:71",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:46",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:48"
+      ]
+    },
+    {
+      "id": "local-cron:diary_weekly_summary",
+      "schedule": "30 1 * * 0",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run diary_weekly_summary",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/diary_weekly_summary.lock (overlap guard only; no per-scheduled-run key); label-keyed overwrite of summaries/<cadence>/<label>.md (cron_registry.py:45-46)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/061_register_diary_summary_jobs.sql:57",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:44",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:47"
+      ]
+    },
+    {
+      "id": "local-cron:domain_scanner",
+      "schedule": "45 0 * * 0",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run domain_scanner",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/domain_scanner.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:41",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:36"
+      ]
+    },
+    {
+      "id": "local-cron:engagement_notifications",
+      "schedule": "0 4 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run engagement_notifications",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/engagement_notifications.lock (overlap guard only; no per-scheduled-run key); queues deduplicated digests (migration 022 description)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/022_engagement_notification_delivery.sql:15",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:32",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:28"
+      ]
+    },
+    {
+      "id": "local-cron:finance_daily_notification",
+      "schedule": "35 7 * * *",
+      "status": "retired-orphan-row",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run finance_daily_notification",
+      "target_owner": "retire-orphan",
+      "retry_policy": "legacy-local-cron-unrunnable",
+      "idempotency_key": "job_lock:data/locks/finance_daily_notification.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/073_register_finance_daily_notification.sql:59"
+      ]
+    },
+    {
+      "id": "local-cron:finance_daily_review",
+      "schedule": "30 7 * * *",
+      "status": "retired-orphan-row",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run finance_daily_review",
+      "target_owner": "retire-orphan",
+      "retry_policy": "legacy-local-cron-unrunnable",
+      "idempotency_key": "job_lock:data/locks/finance_daily_review.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/072_register_finance_daily_review.sql:59"
+      ]
+    },
+    {
+      "id": "local-cron:generate_tasks",
+      "schedule": "15 0 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run generate_tasks",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/generate_tasks.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/010_automation.sql:169",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:20",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:26"
+      ]
+    },
+    {
+      "id": "local-cron:gmail_categorize",
+      "schedule": null,
+      "schedule_gap": "JOB_MAP entry with no cron_jobs schedule in any migration; any schedule lived only in the live DB/cell row",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": null,
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run gmail_categorize",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/gmail_categorize.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:93"
+      ]
+    },
+    {
+      "id": "local-cron:gmail_daily_digest",
+      "schedule": null,
+      "schedule_gap": "JOB_MAP entry with no cron_jobs schedule in any migration; any schedule lived only in the live DB/cell row",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": null,
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run gmail_daily_digest",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/gmail_daily_digest.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:95"
+      ]
+    },
+    {
+      "id": "local-cron:gmail_filters",
+      "schedule": null,
+      "schedule_gap": "JOB_MAP entry with no cron_jobs schedule in any migration; any schedule lived only in the live DB/cell row",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": null,
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run gmail_filters",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/gmail_filters.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:96"
+      ]
+    },
+    {
+      "id": "local-cron:gmail_to_todoist",
+      "schedule": null,
+      "schedule_gap": "JOB_MAP entry with no cron_jobs schedule in any migration; any schedule lived only in the live DB/cell row",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": null,
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run gmail_to_todoist",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/gmail_to_todoist.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:94"
+      ]
+    },
+    {
+      "id": "local-cron:goal_progress",
+      "schedule": null,
+      "schedule_gap": "row existed only in the live DB; migration 069 deactivated it without a schedule (duplicate of update_goals)",
+      "status": "retired-local-cron",
+      "active_in_source": false,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run goal_progress",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/goal_progress.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:10",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:33"
+      ]
+    },
+    {
+      "id": "local-cron:goal_velocity",
+      "schedule": "30 2 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run goal_velocity",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/goal_velocity.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:29",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:76"
+      ]
+    },
+    {
+      "id": "local-cron:habit_analytics",
+      "schedule": "15 2 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run habit_analytics",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/habit_analytics.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:28",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:75"
+      ]
+    },
+    {
+      "id": "local-cron:job_data_readiness",
+      "schedule": "0 */6 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": false,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run job_data_readiness",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/job_data_readiness.lock (overlap guard only; no per-scheduled-run key); read-only gate (cron_registry.py:60-63)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/075_register_job_data_readiness.sql:61",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:64"
+      ]
+    },
+    {
+      "id": "local-cron:media_lifecycle",
+      "schedule": "0 1 * * 0",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run media_lifecycle",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/media_lifecycle.lock (overlap guard only; no per-scheduled-run key); read-only plan; quarantine/purge never run by cron (cron_registry.py:69-70)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/018_media_lifecycle_job.sql:49",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:42",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:71"
+      ]
+    },
+    {
+      "id": "local-cron:reconcile_overdue",
+      "schedule": null,
+      "schedule_gap": "JOB_MAP entry with no cron_jobs schedule in any migration; any schedule lived only in the live DB/cell row",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": null,
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run reconcile_overdue",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/reconcile_overdue.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:97"
+      ]
+    },
+    {
+      "id": "local-cron:refresh_dashboards",
+      "schedule": "0 8,20 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run refresh_dashboards",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/refresh_dashboards.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/070_normalize_cron_schedules.sql:10",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:38"
+      ]
+    },
+    {
+      "id": "local-cron:revenue_analytics",
+      "schedule": "0 2 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run revenue_analytics",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/revenue_analytics.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:27",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:74"
+      ]
+    },
+    {
+      "id": "local-cron:revenue_autorun",
+      "schedule": "0 1 * * *",
+      "status": "retired-orphan-row",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run revenue_autorun",
+      "target_owner": "retire-orphan",
+      "retry_policy": "legacy-local-cron-unrunnable",
+      "idempotency_key": "job_lock:data/locks/revenue_autorun.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:23"
+      ]
+    },
+    {
+      "id": "local-cron:run_alerts",
+      "schedule": "0 8,20 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run run_alerts",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/run_alerts.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/070_normalize_cron_schedules.sql:9",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:37"
+      ]
+    },
+    {
+      "id": "local-cron:sales_pipeline",
+      "schedule": "45 1 * * 0",
+      "status": "retired-orphan-row",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run sales_pipeline",
+      "target_owner": "retire-orphan",
+      "retry_policy": "legacy-local-cron-unrunnable",
+      "idempotency_key": "job_lock:data/locks/sales_pipeline.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/063_register_sales_pipeline_job.sql:56",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:45"
+      ]
+    },
+    {
+      "id": "local-cron:smart_sync",
+      "schedule": "30 6 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run smart_sync",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/smart_sync.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/010_automation.sql:168",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:37",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:25"
+      ]
+    },
+    {
+      "id": "local-cron:sync_all",
+      "schedule": null,
+      "schedule_gap": "JOB_MAP entry with no cron_jobs schedule in any migration; any schedule lived only in the live DB/cell row",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": null,
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run sync_all",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/sync_all.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:92"
+      ]
+    },
+    {
+      "id": "local-cron:sync_calendar",
+      "schedule": null,
+      "schedule_gap": "JOB_MAP entry with no cron_jobs schedule in any migration; any schedule lived only in the live DB/cell row",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": null,
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run sync_calendar",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/sync_calendar.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:81"
+      ]
+    },
+    {
+      "id": "local-cron:sync_gmail",
+      "schedule": "0 6 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run sync_gmail",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/sync_gmail.lock (overlap guard only; no per-scheduled-run key); re-run over the 2-day lookback is idempotent per the registry note (cron_registry.py:89-90)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/070_normalize_cron_schedules.sql:8",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:91"
+      ]
+    },
+    {
+      "id": "local-cron:system_status",
+      "schedule": "30 1 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run system_status",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/system_status.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:25",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:35"
+      ]
+    },
+    {
+      "id": "local-cron:take_snapshot",
+      "schedule": "5 0 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run take_snapshot",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/take_snapshot.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/010_automation.sql:167",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:19",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:24"
+      ]
+    },
+    {
+      "id": "local-cron:time_analytics",
+      "schedule": "45 2 * * *",
+      "status": "retired-orphan-row",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run time_analytics",
+      "target_owner": "retire-orphan",
+      "retry_policy": "legacy-local-cron-unrunnable",
+      "idempotency_key": "job_lock:data/locks/time_analytics.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:30"
+      ]
+    },
+    {
+      "id": "local-cron:update_goals",
+      "schedule": "45 0 * * *",
+      "status": "retired-local-cron",
+      "active_in_source": true,
+      "row_origin": "migration-seed",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run update_goals",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/update_goals.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/010_automation.sql:171",
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:22",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:29"
+      ]
+    },
+    {
+      "id": "local-cron:weekly_habit_autogranted",
+      "schedule": "15 0 * * 0",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run weekly_habit_autogranted",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/weekly_habit_autogranted.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:39",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:31"
+      ]
+    },
+    {
+      "id": "local-cron:weekly_review_gen",
+      "schedule": "30 0 * * 0",
+      "status": "retired-local-cron",
+      "active_in_source": null,
+      "row_origin": "live-db-only",
+      "current_owner": "solo-empire (retired in 3bf3637c; commit message: none of the 40 jobs ever ran)",
+      "current_runner": "user crontab -> infra/scripts/utils/cron_runner.py --run weekly_review_gen",
+      "target_owner": "local-cron-rehome",
+      "retry_policy": "legacy-local-cron-heal-once",
+      "idempotency_key": "job_lock:data/locks/weekly_review_gen.lock (overlap guard only; no per-scheduled-run key)",
+      "execution_history": "legacy-automation-cell",
+      "citations": [
+        "solo-empire-retired:infra/database/migrations/069_harden_cron_execution.sql:40",
+        "solo-empire-retired:infra/scripts/utils/cron_registry.py:32"
+      ]
+    },
+    {
+      "id": "systemd:book-dev-dispatch",
+      "schedule": "*-*-* 08,10,12,14,16,18,20,22:00:00 Asia/Bangkok",
+      "status": "active-installer-in-source",
+      "timezone": "Asia/Bangkok",
+      "current_owner": "platform-ops-cli",
+      "current_runner": "systemd --user book-dev-dispatch.timer -> book-dev-dispatch.service (Type=oneshot)",
+      "target_owner": "ops-timer-rehome",
+      "retry_policy": "systemd-oneshot-no-retry",
+      "idempotency_key": "Linear issue identifier in state.json dispatched ledger (book_dev_linear_cycle.py:14-15, :176)",
+      "execution_history": "systemd-journal",
+      "citations": [
+        "platform-ops-cli:infra/scripts/workflows/install_book_dev_dispatch_timer.py:32"
+      ]
+    },
+    {
+      "id": "systemd:bookchaowalit-org-hub-sync",
+      "schedule": "*-*-* 09:00:00 Asia/Bangkok",
+      "status": "active-installer-in-source",
+      "timezone": "Asia/Bangkok",
+      "current_owner": "platform-ops-cli",
+      "current_runner": "systemd --user bookchaowalit-org-hub-sync.timer -> bookchaowalit-org-hub-sync.service (Type=oneshot)",
+      "target_owner": "ops-timer-rehome",
+      "retry_policy": "systemd-oneshot-no-retry",
+      "idempotency_key": "exclusive flock .runtime/org-hub-sync.lock (org_hub_registry.py:465); content-addressed registry diff (unchanged -> no write)",
+      "execution_history": "systemd-journal",
+      "citations": [
+        "platform-ops-cli:infra/scripts/sync/install_org_hub_timer.py:18"
+      ]
+    },
+    {
+      "id": "systemd:tracker-sync-pilot",
+      "schedule": "*-*-* *:00/15:00",
+      "status": "active-installer-in-source",
+      "timezone": "host local",
+      "current_owner": "platform-ops-cli",
+      "current_runner": "systemd --user tracker-sync-pilot.timer -> tracker-sync-pilot.service (Type=oneshot)",
+      "target_owner": "ops-timer-rehome",
+      "retry_policy": "systemd-oneshot-no-retry",
+      "idempotency_key": "checkpoint.json under --state-dir plus managed-block markers tracker-sync:task-177 (tracker_sync.py:37, :147)",
+      "execution_history": "systemd-journal",
+      "citations": [
+        "platform-ops-cli:infra/templates/tracker-sync/tracker-sync-pilot.timer:5"
+      ]
+    },
+    {
+      "id": "windows-task:SoloEmpire-DNS-Sync",
+      "schedule": "at-logon",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (installer removed in 9f44f602)",
+      "current_runner": "Windows Task Scheduler (at logon) -> wsl.exe sync-dns.sh",
+      "target_owner": "retire-workstation",
+      "retry_policy": "windows-task-no-retry",
+      "idempotency_key": "task name SoloEmpire-DNS-Sync with -Force (install); none per run",
+      "execution_history": "windows-task-scheduler-only",
+      "citations": [
+        "solo-empire-retired:infra/self-hosted-stack/setup-auto-dns.ps1:20"
+      ]
+    },
+    {
+      "id": "windows-task:SoloEmpire-Opportunity-Discovery",
+      "schedule": "every 6h",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (installer removed in 9f44f602)",
+      "current_runner": "Windows Task Scheduler -> run_windows_acquisition.ps1 -> run_scheduled_acquisition.py",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "windows-task-no-retry",
+      "idempotency_key": "task name SoloEmpire-Opportunity-Discovery (install); MultipleInstances IgnoreNew (overlap)",
+      "execution_history": "windows-discovery-log",
+      "citations": [
+        "solo-empire-retired:infra/scripts/discovery/setup_windows_task.ps1:75"
+      ]
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-crypto",
+      "schedule": "every 4h",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (planner removed in 9f44f602; plan-not-installed by default)",
+      "current_runner": "Windows Task Scheduler -> windows_scraping_scheduler.py run --product crypto",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "task description marker solo-empire.windows-scraping.v1;job=crypto (install); lock data/logs/windows-scraping/crypto.lock + IgnoreNew (overlap)",
+      "execution_history": "windows-scraping-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:165"
+      ]
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-defi",
+      "schedule": "daily 07:00",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (planner removed in 9f44f602; plan-not-installed by default)",
+      "current_runner": "Windows Task Scheduler -> windows_scraping_scheduler.py run --product defi",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "task description marker solo-empire.windows-scraping.v1;job=defi (install); lock data/logs/windows-scraping/defi.lock + IgnoreNew (overlap)",
+      "execution_history": "windows-scraping-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:166"
+      ]
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-fx",
+      "schedule": "every 6h",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (planner removed in 9f44f602; plan-not-installed by default)",
+      "current_runner": "Windows Task Scheduler -> windows_scraping_scheduler.py run --product fx",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "task description marker solo-empire.windows-scraping.v1;job=fx (install); lock data/logs/windows-scraping/fx.lock + IgnoreNew (overlap)",
+      "execution_history": "windows-scraping-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:165"
+      ]
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-monitor",
+      "schedule": "every 1h",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (planner removed in 9f44f602; plan-not-installed by default)",
+      "current_runner": "Windows Task Scheduler -> windows_scraping_scheduler.py run --product monitor",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "task description marker solo-empire.windows-scraping.v1;job=monitor (install); lock data/logs/windows-scraping/monitor.lock + IgnoreNew (overlap)",
+      "execution_history": "windows-scraping-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:165"
+      ]
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-news",
+      "schedule": "every 2h",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (planner removed in 9f44f602; plan-not-installed by default)",
+      "current_runner": "Windows Task Scheduler -> windows_scraping_scheduler.py run --product news",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "task description marker solo-empire.windows-scraping.v1;job=news (install); lock data/logs/windows-scraping/news.lock + IgnoreNew (overlap)",
+      "execution_history": "windows-scraping-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:165"
+      ]
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-seo",
+      "schedule": "daily 08:30",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (planner removed in 9f44f602; plan-not-installed by default)",
+      "current_runner": "Windows Task Scheduler -> windows_scraping_scheduler.py run --product seo",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "task description marker solo-empire.windows-scraping.v1;job=seo (install); lock data/logs/windows-scraping/seo.lock + IgnoreNew (overlap)",
+      "execution_history": "windows-scraping-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:166"
+      ]
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-stocks",
+      "schedule": "daily 08:00",
+      "status": "retired-host-installer",
+      "current_owner": "solo-empire (planner removed in 9f44f602; plan-not-installed by default)",
+      "current_runner": "Windows Task Scheduler -> windows_scraping_scheduler.py run --product stocks",
+      "target_owner": "data-capture-rehome",
+      "retry_policy": "data-lake-capture-in-process-2-attempts",
+      "idempotency_key": "task description marker solo-empire.windows-scraping.v1;job=stocks (install); lock data/logs/windows-scraping/stocks.lock + IgnoreNew (overlap)",
+      "execution_history": "windows-scraping-logs",
+      "citations": [
+        "solo-empire-retired:infra/scripts/data_lake/windows_scraping_scheduler.py:166"
+      ]
+    }
+  ]
+}

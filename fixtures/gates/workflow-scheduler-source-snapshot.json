@@ -1,0 +1,1828 @@
+{
+  "snapshot_version": 1,
+  "generated_by": "scripts/scheduler_inventory.py extract",
+  "marker_regex": "OnCalendar|^\\s*-\\s*cron:|crontab -|Register-ScheduledTask|New-ScheduledTaskTrigger|schtasks|launchctl|StartCalendarInterval|INTO cron_jobs|UPDATE cron_jobs|cronSchedule|\\\"schedule\\\":|systemctl --user enable",
+  "sources": {
+    "solo-empire-retired": {
+      "repository": "bookchaowalit/solo-empire",
+      "sha": "1d0e04bb04af74cc05d4733da35719f2dfad6bf6",
+      "role": "last tree before 3bf3637c retired the local cron runner, cron registry and healer",
+      "ignored": [
+        {
+          "path": "data/generated/briefings/system-status-2026-06-11.md",
+          "reason": "documentation or evidence, not a schedule definition"
+        },
+        {
+          "path": "infra/scripts/data_lake/publish_collection_outputs.py",
+          "reason": "reads a registry 'schedule' field; defines no schedule"
+        },
+        {
+          "path": "infra/scripts/data_lake/scraping_coverage.py",
+          "reason": "reads a registry 'schedule' field; defines no schedule"
+        },
+        {
+          "path": "infra/tests/data_lake/scraping_coverage_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "infra/tests/data_lake/windows_scraping_scheduler_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "infra/tests/decisions/decision_brief_cron_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "infra/tests/decisions/decision_records_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "infra/tests/integrations/brave_bookmark_workflow_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "infra/tests/platform/monitor_health_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "infra/tests/quality/automation_fixture.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "infra/tests/quality/cron_cell_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "infra/tests/workflows/job_data_readiness_cron_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "integrations/README.md",
+          "reason": "documentation or evidence, not a schedule definition"
+        },
+        {
+          "path": "integrations/google/setup_calendar.py",
+          "reason": "prints a suggested crontab line for the operator; installs nothing"
+        },
+        {
+          "path": "operations/evidence/AUTOMATION-SUMMARY.md",
+          "reason": "documentation or evidence, not a schedule definition"
+        },
+        {
+          "path": "operations/runbooks/SCRAPING-SCHEDULER-HOST-OPTIONS.md",
+          "reason": "documentation or evidence, not a schedule definition"
+        },
+        {
+          "path": "plans/active/scraping-coverage-w1-w2-evidence-2026-09-12.md",
+          "reason": "documentation or evidence, not a schedule definition"
+        }
+      ],
+      "unclassified": [],
+      "record_count": 117
+    },
+    "solo-empire-head": {
+      "repository": "bookchaowalit/solo-empire",
+      "sha": "63efeeb07a50171af934336bec4a05295f494732",
+      "role": "current hub HEAD; registry still names infra/tasks and infra/scripts/workflows",
+      "ignored": [],
+      "unclassified": [],
+      "record_count": 0
+    },
+    "platform-ops-cli": {
+      "repository": "bookchaowalit/platform-ops-cli",
+      "sha": "f372959408a4438eb41ef1a1ad3c8a53454dca0e",
+      "role": "current owner of infra/tasks and infra/scripts/workflows after 5f034945",
+      "ignored": [
+        {
+          "path": "infra/tests/decisions/decision_records_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        },
+        {
+          "path": "infra/tests/platform/monitor_health_test.py",
+          "reason": "test code or test fixture, not an installed schedule"
+        }
+      ],
+      "unclassified": [],
+      "record_count": 3
+    }
+  },
+  "records": [
+    {
+      "id": "gha:backup",
+      "source": "solo-empire-retired",
+      "kind": "github-actions-schedule",
+      "schedule": "0 2 * * *",
+      "path": ".github/workflows/backup.yml",
+      "line": 5,
+      "text": "- cron: \"0 2 * * *\"  # Daily at 02:00 UTC",
+      "extra": {
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "gha:data-lake-cloud-contract",
+      "source": "solo-empire-retired",
+      "kind": "github-actions-schedule",
+      "schedule": "30 2 * * 1",
+      "path": ".github/workflows/data-lake-cloud-contract.yml",
+      "line": 20,
+      "text": "- cron: \"30 2 * * 1\"",
+      "extra": {
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "gha:free-cloud-e2e",
+      "source": "solo-empire-retired",
+      "kind": "github-actions-schedule",
+      "schedule": "17 3 * * 1",
+      "path": ".github/workflows/free-cloud-e2e.yml",
+      "line": 20,
+      "text": "- cron: \"17 3 * * 1\"",
+      "extra": {
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "gha:free-resource-upstream-audit",
+      "source": "solo-empire-retired",
+      "kind": "github-actions-schedule",
+      "schedule": "30 1 * * 1",
+      "path": ".github/workflows/free-resource-upstream-audit.yml",
+      "line": 6,
+      "text": "- cron: \"30 1 * * 1\"",
+      "extra": {
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "gha:health-check",
+      "source": "solo-empire-retired",
+      "kind": "github-actions-schedule",
+      "schedule": "0 */6 * * *",
+      "path": ".github/workflows/health-check.yml",
+      "line": 5,
+      "text": "- cron: \"0 */6 * * *\"  # Every 6 hours",
+      "extra": {
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "gha:scorecard",
+      "source": "solo-empire-retired",
+      "kind": "github-actions-schedule",
+      "schedule": "0 6 * * 1",
+      "path": ".github/workflows/scorecard.yml",
+      "line": 8,
+      "text": "- cron: \"0 6 * * 1\"",
+      "extra": {
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "local-cron:take_snapshot",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "daily",
+      "path": "infra/database/migrations/010_automation.sql",
+      "line": 167,
+      "text": "('Daily Snapshot', 'Capture daily task metrics', 'daily', 'take_snapshot', '{}'),",
+      "extra": {
+        "name": "Daily Snapshot",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:smart_sync",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "0 8 * * *",
+      "path": "infra/database/migrations/010_automation.sql",
+      "line": 168,
+      "text": "('Morning Sync', 'Sync all sources at start of day', '0 8 * * *', 'smart_sync', '{}'),",
+      "extra": {
+        "name": "Morning Sync",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:generate_tasks",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "0 6 * * *",
+      "path": "infra/database/migrations/010_automation.sql",
+      "line": 169,
+      "text": "('Generate Recurring', 'Create recurring task instances', '0 6 * * *', 'generate_tasks', '{}'),",
+      "extra": {
+        "name": "Generate Recurring",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:check_notifications",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "0 */2 * * *",
+      "path": "infra/database/migrations/010_automation.sql",
+      "line": 170,
+      "text": "('Check Notifications', 'Run notification checks', '0 */2 * * *', 'check_notifications', '{}'),",
+      "extra": {
+        "name": "Check Notifications",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:update_goals",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "0 20 * * *",
+      "path": "infra/database/migrations/010_automation.sql",
+      "line": 171,
+      "text": "('Update Goals', 'Refresh productivity goal progress', '0 20 * * *', 'update_goals', '{}'),",
+      "extra": {
+        "name": "Update Goals",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:auto_archive",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "weekly",
+      "path": "infra/database/migrations/010_automation.sql",
+      "line": 172,
+      "text": "('Auto Archive', 'Archive old completed tasks', 'weekly', 'auto_archive', '{\"days\": 30}');",
+      "extra": {
+        "name": "Auto Archive",
+        "is_active": true,
+        "params": "{\"days\": 30}"
+      }
+    },
+    {
+      "id": "local-cron:media_lifecycle",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "weekly",
+      "path": "infra/database/migrations/018_media_lifecycle_job.sql",
+      "line": 49,
+      "text": "'weekly', 'media_lifecycle', '{}', 1",
+      "extra": {
+        "name": "Media Lifecycle Inventory",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:engagement_notifications",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "daily",
+      "path": "infra/database/migrations/022_engagement_notification_delivery.sql",
+      "line": 15,
+      "text": "'daily',",
+      "extra": {
+        "name": "Engagement Notification Queue",
+        "is_active": true,
+        "params": "{\"days\": 3}"
+      }
+    },
+    {
+      "id": "local-cron:engagement_notifications",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "daily",
+      "path": "infra/database/migrations/023_register_engagement_notification_job.sql",
+      "line": 48,
+      "text": "'daily',",
+      "extra": {
+        "name": "Engagement Notification Queue",
+        "is_active": true,
+        "params": "{\"days\": 3}"
+      }
+    },
+    {
+      "id": "local-cron:decision_review",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "daily",
+      "path": "infra/database/migrations/031_register_decision_review_job.sql",
+      "line": 48,
+      "text": "'daily',",
+      "extra": {
+        "name": "Decision Review Queue",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:decision_brief_daily",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "daily",
+      "path": "infra/database/migrations/034_register_decision_brief_jobs.sql",
+      "line": 53,
+      "text": "'daily',",
+      "extra": {
+        "name": "Daily Decision Brief",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:decision_brief_weekly",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "weekly",
+      "path": "infra/database/migrations/034_register_decision_brief_jobs.sql",
+      "line": 67,
+      "text": "'weekly',",
+      "extra": {
+        "name": "Weekly Decision Brief",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:daily_diary",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "daily",
+      "path": "infra/database/migrations/037_register_daily_diary_job.sql",
+      "line": 53,
+      "text": "'daily',",
+      "extra": {
+        "name": "Daily Activity Diary",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:book_dev_loop",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "daily",
+      "path": "infra/database/migrations/038_book_dev_engineering_loop.sql",
+      "line": 54,
+      "text": "'daily',",
+      "extra": {
+        "name": "Book Dev Engineering Loop",
+        "is_active": true,
+        "params": "{\"max_tasks\":5}"
+      }
+    },
+    {
+      "id": "local-cron:brave_bookmarks_maintenance",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "every_4h",
+      "path": "infra/database/migrations/058_register_brave_bookmark_maintenance.sql",
+      "line": 54,
+      "text": "'every_4h',",
+      "extra": {
+        "name": "Brave Bookmark Maintenance",
+        "is_active": false,
+        "params": "{\"auto\":true}"
+      }
+    },
+    {
+      "id": "local-cron:diary_weekly_summary",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "weekly",
+      "path": "infra/database/migrations/061_register_diary_summary_jobs.sql",
+      "line": 57,
+      "text": "'weekly',",
+      "extra": {
+        "name": "Weekly Diary Summary",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:diary_monthly_summary",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "monthly",
+      "path": "infra/database/migrations/061_register_diary_summary_jobs.sql",
+      "line": 71,
+      "text": "'monthly',",
+      "extra": {
+        "name": "Monthly Diary Summary",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:sales_pipeline",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "weekly",
+      "path": "infra/database/migrations/063_register_sales_pipeline_job.sql",
+      "line": 56,
+      "text": "'weekly',",
+      "extra": {
+        "name": "Weekly Sales Pipeline",
+        "is_active": true,
+        "params": "{\"limit\": 5}"
+      }
+    },
+    {
+      "id": "local-cron:goal_progress",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": null,
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 10,
+      "text": "UPDATE cron_jobs",
+      "extra": {
+        "sets_active": false,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:take_snapshot",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "5 0 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 19,
+      "text": "UPDATE cron_jobs SET schedule = '5 0 * * *' WHERE job_type = 'take_snapshot' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:generate_tasks",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "15 0 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 20,
+      "text": "UPDATE cron_jobs SET schedule = '15 0 * * *' WHERE job_type = 'generate_tasks' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:check_notifications",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "30 0 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 21,
+      "text": "UPDATE cron_jobs SET schedule = '30 0 * * *' WHERE job_type = 'check_notifications' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:update_goals",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "45 0 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 22,
+      "text": "UPDATE cron_jobs SET schedule = '45 0 * * *' WHERE job_type = 'update_goals' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:revenue_autorun",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 1 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 23,
+      "text": "UPDATE cron_jobs SET schedule = '0 1 * * *' WHERE job_type = 'revenue_autorun' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:db_health_check",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "15 1 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 24,
+      "text": "UPDATE cron_jobs SET schedule = '15 1 * * *' WHERE job_type = 'db_health_check' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:system_status",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "30 1 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 25,
+      "text": "UPDATE cron_jobs SET schedule = '30 1 * * *' WHERE job_type = 'system_status' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:analytics_dashboard",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "45 1 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 26,
+      "text": "UPDATE cron_jobs SET schedule = '45 1 * * *' WHERE job_type = 'analytics_dashboard' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:revenue_analytics",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 2 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 27,
+      "text": "UPDATE cron_jobs SET schedule = '0 2 * * *' WHERE job_type = 'revenue_analytics' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:habit_analytics",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "15 2 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 28,
+      "text": "UPDATE cron_jobs SET schedule = '15 2 * * *' WHERE job_type = 'habit_analytics' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:goal_velocity",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "30 2 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 29,
+      "text": "UPDATE cron_jobs SET schedule = '30 2 * * *' WHERE job_type = 'goal_velocity' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:time_analytics",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "45 2 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 30,
+      "text": "UPDATE cron_jobs SET schedule = '45 2 * * *' WHERE job_type = 'time_analytics' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:backup_db",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 3 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 31,
+      "text": "UPDATE cron_jobs SET schedule = '0 3 * * *' WHERE job_type = 'backup_db' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:engagement_notifications",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 4 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 32,
+      "text": "UPDATE cron_jobs SET schedule = '0 4 * * *' WHERE job_type = 'engagement_notifications' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:decision_review",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "15 4 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 33,
+      "text": "UPDATE cron_jobs SET schedule = '15 4 * * *' WHERE job_type = 'decision_review' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:decision_brief_daily",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "30 4 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 34,
+      "text": "UPDATE cron_jobs SET schedule = '30 4 * * *' WHERE job_type = 'decision_brief_daily' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:daily_diary",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "45 4 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 35,
+      "text": "UPDATE cron_jobs SET schedule = '45 4 * * *' WHERE job_type = 'daily_diary' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:book_dev_loop",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "30 5 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 36,
+      "text": "UPDATE cron_jobs SET schedule = '30 5 * * *' WHERE job_type = 'book_dev_loop' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:smart_sync",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "30 6 * * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 37,
+      "text": "UPDATE cron_jobs SET schedule = '30 6 * * *' WHERE job_type = 'smart_sync' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:auto_archive",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 0 * * 0",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 38,
+      "text": "UPDATE cron_jobs SET schedule = '0 0 * * 0' WHERE job_type = 'auto_archive' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:weekly_habit_autogranted",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "15 0 * * 0",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 39,
+      "text": "UPDATE cron_jobs SET schedule = '15 0 * * 0' WHERE job_type = 'weekly_habit_autogranted' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:weekly_review_gen",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "30 0 * * 0",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 40,
+      "text": "UPDATE cron_jobs SET schedule = '30 0 * * 0' WHERE job_type = 'weekly_review_gen' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:domain_scanner",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "45 0 * * 0",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 41,
+      "text": "UPDATE cron_jobs SET schedule = '45 0 * * 0' WHERE job_type = 'domain_scanner' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:media_lifecycle",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 1 * * 0",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 42,
+      "text": "UPDATE cron_jobs SET schedule = '0 1 * * 0' WHERE job_type = 'media_lifecycle' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:decision_brief_weekly",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "15 1 * * 0",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 43,
+      "text": "UPDATE cron_jobs SET schedule = '15 1 * * 0' WHERE job_type = 'decision_brief_weekly' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:diary_weekly_summary",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "30 1 * * 0",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 44,
+      "text": "UPDATE cron_jobs SET schedule = '30 1 * * 0' WHERE job_type = 'diary_weekly_summary' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:sales_pipeline",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "45 1 * * 0",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 45,
+      "text": "UPDATE cron_jobs SET schedule = '45 1 * * 0' WHERE job_type = 'sales_pipeline' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:diary_monthly_summary",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 2 1 * *",
+      "path": "infra/database/migrations/069_harden_cron_execution.sql",
+      "line": 46,
+      "text": "UPDATE cron_jobs SET schedule = '0 2 1 * *' WHERE job_type = 'diary_monthly_summary' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:cron_heal",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 */4 * * *",
+      "path": "infra/database/migrations/070_normalize_cron_schedules.sql",
+      "line": 5,
+      "text": "UPDATE cron_jobs SET schedule = '0 */4 * * *' WHERE job_type = 'cron_heal' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:brave_bookmarks_maintenance",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 */4 * * *",
+      "path": "infra/database/migrations/070_normalize_cron_schedules.sql",
+      "line": 6,
+      "text": "UPDATE cron_jobs SET schedule = '0 */4 * * *' WHERE job_type = 'brave_bookmarks_maintenance' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:data_freshness",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 */6 * * *",
+      "path": "infra/database/migrations/070_normalize_cron_schedules.sql",
+      "line": 7,
+      "text": "UPDATE cron_jobs SET schedule = '0 */6 * * *' WHERE job_type = 'data_freshness' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:sync_gmail",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 6 * * *",
+      "path": "infra/database/migrations/070_normalize_cron_schedules.sql",
+      "line": 8,
+      "text": "UPDATE cron_jobs SET schedule = '0 6 * * *' WHERE job_type = 'sync_gmail' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:run_alerts",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 8,20 * * *",
+      "path": "infra/database/migrations/070_normalize_cron_schedules.sql",
+      "line": 9,
+      "text": "UPDATE cron_jobs SET schedule = '0 8,20 * * *' WHERE job_type = 'run_alerts' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:refresh_dashboards",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-update",
+      "schedule": "0 8,20 * * *",
+      "path": "infra/database/migrations/070_normalize_cron_schedules.sql",
+      "line": 10,
+      "text": "UPDATE cron_jobs SET schedule = '0 8,20 * * *' WHERE job_type = 'refresh_dashboards' AND is_active = 1;",
+      "extra": {
+        "sets_active": null,
+        "only_if_active": true
+      }
+    },
+    {
+      "id": "local-cron:finance_daily_review",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "30 7 * * *",
+      "path": "infra/database/migrations/072_register_finance_daily_review.sql",
+      "line": 59,
+      "text": "'30 7 * * *',",
+      "extra": {
+        "name": "Daily Finance Control Review",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:finance_daily_notification",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "35 7 * * *",
+      "path": "infra/database/migrations/073_register_finance_daily_notification.sql",
+      "line": 59,
+      "text": "'35 7 * * *',",
+      "extra": {
+        "name": "Finance Daily Notification Queue",
+        "is_active": true,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "local-cron:job_data_readiness",
+      "source": "solo-empire-retired",
+      "kind": "cron-jobs-insert",
+      "schedule": "0 */6 * * *",
+      "path": "infra/database/migrations/075_register_job_data_readiness.sql",
+      "line": 61,
+      "text": "'0 */6 * * *',",
+      "extra": {
+        "name": "Book Job Data Readiness",
+        "is_active": false,
+        "params": "{}"
+      }
+    },
+    {
+      "id": "crontab:book-scraping-scheduler",
+      "source": "solo-empire-retired",
+      "kind": "crontab-installer",
+      "schedule": "0 */6 * * *",
+      "path": "infra/scripts/data_lake/setup_jobs_cron.sh",
+      "line": 72,
+      "text": "\"0 */6 * * *\" \\",
+      "extra": {
+        "attempts": 2,
+        "timeout_seconds": 180,
+        "lock_path": "data/jobs-feeds.lock",
+        "log_file": "data/logs/jobs-feeds-cron.log"
+      }
+    },
+    {
+      "id": "crontab:book-crypto-data-feeds",
+      "source": "solo-empire-retired",
+      "kind": "crontab-installer",
+      "schedule": "0 */4 * * *",
+      "path": "infra/scripts/data_lake/setup_market_cron.sh",
+      "line": 85,
+      "text": "cron_entry \"0 */4 * * *\" crypto \"# book-crypto-data-feeds\" \"${lake_uri}\"",
+      "extra": {
+        "attempts": 2,
+        "timeout_seconds": 180,
+        "lock_path": "data/market-feeds.lock",
+        "log_file": "data/logs/market-feeds-cron.log",
+        "product": "crypto"
+      }
+    },
+    {
+      "id": "crontab:book-stock-data-feeds",
+      "source": "solo-empire-retired",
+      "kind": "crontab-installer",
+      "schedule": "0 8 * * *",
+      "path": "infra/scripts/data_lake/setup_market_cron.sh",
+      "line": 86,
+      "text": "cron_entry \"0 8 * * *\" stocks \"# book-stock-data-feeds\" \"${lake_uri}\"",
+      "extra": {
+        "attempts": 2,
+        "timeout_seconds": 180,
+        "lock_path": "data/market-feeds.lock",
+        "log_file": "data/logs/market-feeds-cron.log",
+        "product": "stocks"
+      }
+    },
+    {
+      "id": "crontab:book-fx-data-feeds",
+      "source": "solo-empire-retired",
+      "kind": "crontab-installer",
+      "schedule": "0 */6 * * *",
+      "path": "infra/scripts/data_lake/setup_market_cron.sh",
+      "line": 87,
+      "text": "cron_entry \"0 */6 * * *\" fx \"# book-fx-data-feeds\" \"${lake_uri}\"",
+      "extra": {
+        "attempts": 2,
+        "timeout_seconds": 180,
+        "lock_path": "data/market-feeds.lock",
+        "log_file": "data/logs/market-feeds-cron.log",
+        "product": "fx"
+      }
+    },
+    {
+      "id": "crontab:book-defi-data-feeds",
+      "source": "solo-empire-retired",
+      "kind": "crontab-installer",
+      "schedule": "0 7 * * *",
+      "path": "infra/scripts/data_lake/setup_market_cron.sh",
+      "line": 88,
+      "text": "cron_entry \"0 7 * * *\" defi \"# book-defi-data-feeds\" \"${lake_uri}\"",
+      "extra": {
+        "attempts": 2,
+        "timeout_seconds": 180,
+        "lock_path": "data/market-feeds.lock",
+        "log_file": "data/logs/market-feeds-cron.log",
+        "product": "defi"
+      }
+    },
+    {
+      "id": "crontab:book-seo-data-feeds",
+      "source": "solo-empire-retired",
+      "kind": "crontab-installer",
+      "schedule": "30 8 * * *",
+      "path": "infra/scripts/data_lake/setup_seo_cron.sh",
+      "line": 62,
+      "text": "\"30 8 * * *\" \\",
+      "extra": {
+        "attempts": 2,
+        "timeout_seconds": 180,
+        "lock_path": "data/seo-feeds.lock",
+        "log_file": "data/logs/seo-feeds-cron.log"
+      }
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-news",
+      "source": "solo-empire-retired",
+      "kind": "windows-scheduled-task",
+      "schedule": "every 2h",
+      "path": "infra/scripts/data_lake/windows_scraping_scheduler.py",
+      "line": 165,
+      "text": "intervals = {\"news\": 2, \"crypto\": 4, \"fx\": 6, \"monitor\": 1}",
+      "extra": {
+        "overlap": "IgnoreNew",
+        "execution_limit_minutes": 15,
+        "installed_by_default": false
+      }
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-crypto",
+      "source": "solo-empire-retired",
+      "kind": "windows-scheduled-task",
+      "schedule": "every 4h",
+      "path": "infra/scripts/data_lake/windows_scraping_scheduler.py",
+      "line": 165,
+      "text": "intervals = {\"news\": 2, \"crypto\": 4, \"fx\": 6, \"monitor\": 1}",
+      "extra": {
+        "overlap": "IgnoreNew",
+        "execution_limit_minutes": 15,
+        "installed_by_default": false
+      }
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-stocks",
+      "source": "solo-empire-retired",
+      "kind": "windows-scheduled-task",
+      "schedule": "daily 08:00",
+      "path": "infra/scripts/data_lake/windows_scraping_scheduler.py",
+      "line": 166,
+      "text": "daily = {\"stocks\": \"08:00\", \"defi\": \"07:00\", \"seo\": \"08:30\"}",
+      "extra": {
+        "overlap": "IgnoreNew",
+        "execution_limit_minutes": 15,
+        "installed_by_default": false
+      }
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-fx",
+      "source": "solo-empire-retired",
+      "kind": "windows-scheduled-task",
+      "schedule": "every 6h",
+      "path": "infra/scripts/data_lake/windows_scraping_scheduler.py",
+      "line": 165,
+      "text": "intervals = {\"news\": 2, \"crypto\": 4, \"fx\": 6, \"monitor\": 1}",
+      "extra": {
+        "overlap": "IgnoreNew",
+        "execution_limit_minutes": 15,
+        "installed_by_default": false
+      }
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-defi",
+      "source": "solo-empire-retired",
+      "kind": "windows-scheduled-task",
+      "schedule": "daily 07:00",
+      "path": "infra/scripts/data_lake/windows_scraping_scheduler.py",
+      "line": 166,
+      "text": "daily = {\"stocks\": \"08:00\", \"defi\": \"07:00\", \"seo\": \"08:30\"}",
+      "extra": {
+        "overlap": "IgnoreNew",
+        "execution_limit_minutes": 15,
+        "installed_by_default": false
+      }
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-seo",
+      "source": "solo-empire-retired",
+      "kind": "windows-scheduled-task",
+      "schedule": "daily 08:30",
+      "path": "infra/scripts/data_lake/windows_scraping_scheduler.py",
+      "line": 166,
+      "text": "daily = {\"stocks\": \"08:00\", \"defi\": \"07:00\", \"seo\": \"08:30\"}",
+      "extra": {
+        "overlap": "IgnoreNew",
+        "execution_limit_minutes": 15,
+        "installed_by_default": false
+      }
+    },
+    {
+      "id": "windows-task:SoloEmpire-Scraping-monitor",
+      "source": "solo-empire-retired",
+      "kind": "windows-scheduled-task",
+      "schedule": "every 1h",
+      "path": "infra/scripts/data_lake/windows_scraping_scheduler.py",
+      "line": 165,
+      "text": "intervals = {\"news\": 2, \"crypto\": 4, \"fx\": 6, \"monitor\": 1}",
+      "extra": {
+        "overlap": "IgnoreNew",
+        "execution_limit_minutes": 15,
+        "installed_by_default": false
+      }
+    },
+    {
+      "id": "windows-task:SoloEmpire-Opportunity-Discovery",
+      "source": "solo-empire-retired",
+      "kind": "windows-scheduled-task",
+      "schedule": "every 6h",
+      "path": "infra/scripts/discovery/setup_windows_task.ps1",
+      "line": 75,
+      "text": "-RepetitionInterval (New-TimeSpan -Hours 6)",
+      "extra": {}
+    },
+    {
+      "id": "local-cron:take_snapshot",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 24,
+      "text": "'take_snapshot':          ('utils/daily_snapshot.py', ['--save']),",
+      "extra": {
+        "script": "infra/scripts/utils/daily_snapshot.py",
+        "args": [
+          "--save"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:smart_sync",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 25,
+      "text": "'smart_sync':             ('utils/smart_sync.py', []),",
+      "extra": {
+        "script": "infra/scripts/utils/smart_sync.py",
+        "args": [],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:generate_tasks",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 26,
+      "text": "'generate_tasks':         ('utils/recurring_gen.py', ['--apply']),",
+      "extra": {
+        "script": "infra/scripts/utils/recurring_gen.py",
+        "args": [
+          "--apply"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:check_notifications",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 27,
+      "text": "'check_notifications':    ('utils/notification_runner.py', []),",
+      "extra": {
+        "script": "infra/scripts/utils/notification_runner.py",
+        "args": [],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:engagement_notifications",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 28,
+      "text": "'engagement_notifications': ('utils/engagement_notifications.py', ['--apply']),",
+      "extra": {
+        "script": "infra/scripts/utils/engagement_notifications.py",
+        "args": [
+          "--apply"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:update_goals",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 29,
+      "text": "'update_goals':           ('utils/goal_progress.py', ['--update']),",
+      "extra": {
+        "script": "infra/scripts/utils/goal_progress.py",
+        "args": [
+          "--update"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:auto_archive",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 30,
+      "text": "'auto_archive':           ('utils/cleanup.py', ['--archive']),",
+      "extra": {
+        "script": "infra/scripts/utils/cleanup.py",
+        "args": [
+          "--archive"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:weekly_habit_autogranted",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 31,
+      "text": "'weekly_habit_autogranted': ('utils/weekly_habit_autogranted.py', ['--apply']),",
+      "extra": {
+        "script": "infra/scripts/utils/weekly_habit_autogranted.py",
+        "args": [
+          "--apply"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:weekly_review_gen",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 32,
+      "text": "'weekly_review_gen':      ('utils/weekly_review_gen.py', ['--update']),",
+      "extra": {
+        "script": "infra/scripts/utils/weekly_review_gen.py",
+        "args": [
+          "--update"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:goal_progress",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 33,
+      "text": "'goal_progress':          ('utils/goal_progress.py', ['--update']),",
+      "extra": {
+        "script": "infra/scripts/utils/goal_progress.py",
+        "args": [
+          "--update"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:db_health_check",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 34,
+      "text": "'db_health_check':        ('utils/db_health_check.py', ['--quick']),",
+      "extra": {
+        "script": "infra/scripts/utils/db_health_check.py",
+        "args": [
+          "--quick"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:system_status",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 35,
+      "text": "'system_status':          ('utils/system_status.py', ['--save']),",
+      "extra": {
+        "script": "infra/scripts/utils/system_status.py",
+        "args": [
+          "--save"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:domain_scanner",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 36,
+      "text": "'domain_scanner':         ('utils/domain_scanner.py', ['--inactive']),",
+      "extra": {
+        "script": "infra/scripts/utils/domain_scanner.py",
+        "args": [
+          "--inactive"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:run_alerts",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 37,
+      "text": "'run_alerts':             ('utils/alerts.py', ['--quiet', '--telegram']),",
+      "extra": {
+        "script": "infra/scripts/utils/alerts.py",
+        "args": [
+          "--quiet",
+          "--telegram"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:refresh_dashboards",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 38,
+      "text": "'refresh_dashboards':     ('utils/dashboard_refresh.py', []),",
+      "extra": {
+        "script": "infra/scripts/utils/dashboard_refresh.py",
+        "args": [],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:decision_review",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 41,
+      "text": "'decision_review':        ('workflows/decision_review.py', ['--sync', '--json']),",
+      "extra": {
+        "script": "infra/scripts/workflows/decision_review.py",
+        "args": [
+          "--sync",
+          "--json"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:daily_diary",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 44,
+      "text": "'daily_diary':            ('workflows/daily_diary.py', ['--write']),",
+      "extra": {
+        "script": "infra/scripts/workflows/daily_diary.py",
+        "args": [
+          "--write"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:diary_weekly_summary",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 47,
+      "text": "'diary_weekly_summary':   ('workflows/diary_summary.py', ['--cadence', 'weekly', '--write']),",
+      "extra": {
+        "script": "infra/scripts/workflows/diary_summary.py",
+        "args": [
+          "--cadence",
+          "weekly",
+          "--write"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:diary_monthly_summary",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 48,
+      "text": "'diary_monthly_summary':  ('workflows/diary_summary.py', ['--cadence', 'monthly', '--write']),",
+      "extra": {
+        "script": "infra/scripts/workflows/diary_summary.py",
+        "args": [
+          "--cadence",
+          "monthly",
+          "--write"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:book_dev_loop",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 52,
+      "text": "'book_dev_loop':          (",
+      "extra": {
+        "script": "infra/scripts/workflows/book_dev_loop.py",
+        "args": [
+          "--write",
+          "--queue-execution",
+          "--json",
+          "--max-tasks",
+          "5"
+        ],
+        "timeout_seconds": 600
+      }
+    },
+    {
+      "id": "local-cron:decision_brief_daily",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 58,
+      "text": "'decision_brief_daily':   ('workflows/decision_brief.py', ['--cadence', 'daily', '--write']),",
+      "extra": {
+        "script": "infra/scripts/workflows/decision_brief.py",
+        "args": [
+          "--cadence",
+          "daily",
+          "--write"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:decision_brief_weekly",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 59,
+      "text": "'decision_brief_weekly':  ('workflows/decision_brief.py', ['--cadence', 'weekly', '--write']),",
+      "extra": {
+        "script": "infra/scripts/workflows/decision_brief.py",
+        "args": [
+          "--cadence",
+          "weekly",
+          "--write"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:job_data_readiness",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 64,
+      "text": "'job_data_readiness': (",
+      "extra": {
+        "script": "infra/scripts/data_lake/job_data_readiness.py",
+        "args": [
+          "--json"
+        ],
+        "timeout_seconds": 300
+      }
+    },
+    {
+      "id": "local-cron:backup_db",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 68,
+      "text": "'backup_db':              ('db/offhost_backup.py', ['--apply']),",
+      "extra": {
+        "script": "infra/scripts/db/offhost_backup.py",
+        "args": [
+          "--apply"
+        ],
+        "timeout_seconds": 600
+      }
+    },
+    {
+      "id": "local-cron:media_lifecycle",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 71,
+      "text": "'media_lifecycle':        ('utils/media_lifecycle.py', ['--plan', '--save', '--json']),",
+      "extra": {
+        "script": "infra/scripts/utils/media_lifecycle.py",
+        "args": [
+          "--plan",
+          "--save",
+          "--json"
+        ],
+        "timeout_seconds": 600
+      }
+    },
+    {
+      "id": "local-cron:analytics_dashboard",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 73,
+      "text": "'analytics_dashboard':    ('utils/analytics_dashboard.py', []),",
+      "extra": {
+        "script": "infra/scripts/utils/analytics_dashboard.py",
+        "args": [],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:revenue_analytics",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 74,
+      "text": "'revenue_analytics':      ('utils/revenue_analytics.py', ['--json']),",
+      "extra": {
+        "script": "infra/scripts/utils/revenue_analytics.py",
+        "args": [
+          "--json"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:habit_analytics",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 75,
+      "text": "'habit_analytics':        ('utils/habit_analytics.py', ['--json']),",
+      "extra": {
+        "script": "infra/scripts/utils/habit_analytics.py",
+        "args": [
+          "--json"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:goal_velocity",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 76,
+      "text": "'goal_velocity':          ('utils/goal_velocity.py', ['--json']),",
+      "extra": {
+        "script": "infra/scripts/utils/goal_velocity.py",
+        "args": [
+          "--json"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:cron_heal",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 78,
+      "text": "'cron_heal':              ('utils/cron_healer.py', []),",
+      "extra": {
+        "script": "infra/scripts/utils/cron_healer.py",
+        "args": [],
+        "timeout_seconds": 600
+      }
+    },
+    {
+      "id": "local-cron:data_freshness",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 79,
+      "text": "'data_freshness':         ('utils/data_freshness.py', ['--json']),",
+      "extra": {
+        "script": "infra/scripts/utils/data_freshness.py",
+        "args": [
+          "--json"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:sync_calendar",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 81,
+      "text": "'sync_calendar':          ('sync/sync_google_calendar.py', []),",
+      "extra": {
+        "script": "infra/scripts/sync/sync_google_calendar.py",
+        "args": [],
+        "timeout_seconds": 180
+      }
+    },
+    {
+      "id": "local-cron:brave_bookmarks_maintenance",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 85,
+      "text": "'brave_bookmarks_maintenance': (",
+      "extra": {
+        "script": "infra/scripts/sync/brave_bookmark_workflow.py",
+        "args": [
+          "maintain",
+          "--auto",
+          "--json"
+        ],
+        "timeout_seconds": 300
+      }
+    },
+    {
+      "id": "local-cron:sync_gmail",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 91,
+      "text": "'sync_gmail':             ('sync/email_data_pipeline.py', ['--days-back', '2', '--json']),",
+      "extra": {
+        "script": "infra/scripts/sync/email_data_pipeline.py",
+        "args": [
+          "--days-back",
+          "2",
+          "--json"
+        ],
+        "timeout_seconds": 300
+      }
+    },
+    {
+      "id": "local-cron:sync_all",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 92,
+      "text": "'sync_all':               ('sync/sync_all_integrations.py', ['--all']),",
+      "extra": {
+        "script": "infra/scripts/sync/sync_all_integrations.py",
+        "args": [
+          "--all"
+        ],
+        "timeout_seconds": 300
+      }
+    },
+    {
+      "id": "local-cron:gmail_categorize",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 93,
+      "text": "'gmail_categorize':       ('sync/gmail_categorizer.py', ['--json']),",
+      "extra": {
+        "script": "infra/scripts/sync/gmail_categorizer.py",
+        "args": [
+          "--json"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:gmail_to_todoist",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 94,
+      "text": "'gmail_to_todoist':       ('sync/gmail_to_todoist.py', ['--json']),",
+      "extra": {
+        "script": "infra/scripts/sync/gmail_to_todoist.py",
+        "args": [
+          "--json"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:gmail_daily_digest",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 95,
+      "text": "'gmail_daily_digest':     ('sync/gmail_daily_digest.py', ['--json']),",
+      "extra": {
+        "script": "infra/scripts/sync/gmail_daily_digest.py",
+        "args": [
+          "--json"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:gmail_filters",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 96,
+      "text": "'gmail_filters':          ('sync/gmail_filters.py', ['--json']),",
+      "extra": {
+        "script": "infra/scripts/sync/gmail_filters.py",
+        "args": [
+          "--json"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "local-cron:reconcile_overdue",
+      "source": "solo-empire-retired",
+      "kind": "job-map",
+      "schedule": null,
+      "path": "infra/scripts/utils/cron_registry.py",
+      "line": 97,
+      "text": "'reconcile_overdue':      ('sync/reconcile_overdue_tasks.py', ['--execute']),",
+      "extra": {
+        "script": "infra/scripts/sync/reconcile_overdue_tasks.py",
+        "args": [
+          "--execute"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "windows-task:SoloEmpire-DNS-Sync",
+      "source": "solo-empire-retired",
+      "kind": "windows-scheduled-task",
+      "schedule": "at-logon",
+      "path": "infra/self-hosted-stack/setup-auto-dns.ps1",
+      "line": 20,
+      "text": "$triggerLogin = New-ScheduledTaskTrigger -AtLogOn",
+      "extra": {}
+    },
+    {
+      "id": "systemd:bookchaowalit-org-hub-sync",
+      "source": "platform-ops-cli",
+      "kind": "systemd-timer",
+      "schedule": "*-*-* 09:00:00 Asia/Bangkok",
+      "path": "infra/scripts/sync/install_org_hub_timer.py",
+      "line": 18,
+      "text": "CALENDAR = '*-*-* 09:00:00 Asia/Bangkok'",
+      "extra": {
+        "persistent": true
+      }
+    },
+    {
+      "id": "systemd:book-dev-dispatch",
+      "source": "platform-ops-cli",
+      "kind": "systemd-timer",
+      "schedule": "*-*-* 08,10,12,14,16,18,20,22:00:00 Asia/Bangkok",
+      "path": "infra/scripts/workflows/install_book_dev_dispatch_timer.py",
+      "line": 32,
+      "text": "SCHEDULE = \"*-*-* 08,10,12,14,16,18,20,22:00:00 Asia/Bangkok\"",
+      "extra": {
+        "persistent": false
+      }
+    },
+    {
+      "id": "systemd:tracker-sync-pilot",
+      "source": "platform-ops-cli",
+      "kind": "systemd-timer",
+      "schedule": "*-*-* *:00/15:00",
+      "path": "infra/templates/tracker-sync/tracker-sync-pilot.timer",
+      "line": 5,
+      "text": "OnCalendar=*-*-* *:00/15:00",
+      "extra": {
+        "persistent": true
+      }
+    }
+  ]
+}

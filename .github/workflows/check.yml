@@ -33,5 +33,19 @@ jobs:
       - name: Verify vendored schema matches pinned canonical
         run: python3 scripts/check_schema_pin.py
 
+      - name: Check out pinned platform-ops-cli source (BOO-165, public, read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: bookchaowalit/platform-ops-cli
+          ref: f372959408a4438eb41ef1a1ad3c8a53454dca0e
+          path: .ci-sources/platform-ops-cli
+          persist-credentials: false
+
+      - name: Re-extract platform-ops-cli schedules against the BOO-165 snapshot
+        run: python3 scripts/scheduler_inventory.py verify-source --source platform-ops-cli --repo .ci-sources/platform-ops-cli
+
       - name: Run offline contract check and tests
+        env:
+          PLATFORM_OPS_CLI_ROOT: ${{ github.workspace }}/.ci-sources/platform-ops-cli
+          BOO165_REQUIRE_OPS_SOURCE: "1"
         run: bash scripts/check.sh
