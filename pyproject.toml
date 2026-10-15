@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "platform-workflow"
+version = "0.1.0"
+description = "Workspace-isolated PostgreSQL durable jobs"
+requires-python = ">=3.12"
+dependencies = ["platform-backend-core>=0.1.0,<0.2", "fastapi>=0.115,<1", "psycopg[binary,pool]>=3.2,<4", "uvicorn>=0.30,<1"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10", "httpx>=0.27,<1"]
+
+[project.scripts]
+platform-workflow = "platform_workflow.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

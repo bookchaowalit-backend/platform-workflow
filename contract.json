@@ -3,7 +3,7 @@
   "schema_version": "book-platform.contract.v1",
   "platform_id": "workflow",
   "repository": "platform-workflow",
-  "status": "scaffolded",
+  "status": "pilot",
   "api_version": "v1",
   "data_owner": "platform-workflow",
   "capabilities": [
@@ -19,13 +19,12 @@
     "observability"
   ],
   "current_implementation": {
-    "repository": "solo-empire",
-    "source_path": "infra/tasks",
+    "repository": "platform-workflow",
+    "source_path": "src/platform_workflow",
     "source_paths": [
-      "infra/tasks",
-      "infra/scripts"
+      "src/platform_workflow"
     ],
-    "source_status": "current-implementation-in-solo-empire"
+    "source_status": "implemented-in-this-repository"
   },
   "migration": {
     "compatibility_adapter": "required",
@@ -55,6 +54,14 @@
       "name": "Python/shell job entry points under infra/scripts invoked by tasks",
       "status": "current-in-solo-empire",
       "source": "infra/scripts"
+    },
+    {
+      "id": "workflow.http.durable-jobs",
+      "kind": "http",
+      "direction": "provides",
+      "name": "Versioned workspace-scoped durable jobs and leased worker API",
+      "status": "implemented",
+      "source": "src/platform_workflow"
     }
   ]
 }

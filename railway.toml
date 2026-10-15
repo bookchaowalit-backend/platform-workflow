@@ -1,0 +1,11 @@
+# Staged only. Configure exact core wheel/revision and isolated runtime role before release.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+[deploy]
+startCommand = "platform-workflow api"
+healthcheckPath = "/readyz"
+healthcheckTimeout = 20
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+numReplicas = 1
