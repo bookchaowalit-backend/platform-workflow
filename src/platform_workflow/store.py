@@ -34,6 +34,19 @@ def _scope(principal, required):
 
 def _json(value, limit):
     encoded = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False)
+    # PostgreSQL JSONB rejects actual NUL and surrogate code points in both
+    # object keys and values. Inspect decoded strings, preserving literal escapes.
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str):
+            if any(character == '\x00' or 0xD800 <= ord(character) <= 0xDFFF for character in item):
+                raise ValueError('JSON contains unsupported Unicode')
+        elif isinstance(item, dict):
+            pending.extend(item.keys())
+            pending.extend(item.values())
+        elif isinstance(item, (list, tuple)):
+            pending.extend(item)
     if len(encoded.encode()) > limit:
         raise ValueError('JSON exceeds size limit')
     return encoded
@@ -191,12 +204,15 @@ class JobStore:
 
     def complete(self, principal, job_id, *, lease_token, result):
         _scope(principal, 'jobs:work')
-        canonical = _json(result, 14000)
+        _json(result, 14000)
         with self.database.transaction(principal.workspace) as conn, conn.cursor(row_factory=dict_row) as c:
             self._database_json_bound(c, result, 16384)
             row = self._get(c, job_id, lock=True)
             if row['status']=='succeeded' and row['lease_token']==lease_token:
-                if _json(row['result'], 16384) != canonical:
+                # Compare the stored representation inside PostgreSQL: JSONB
+                # normalizes exponent notation, unlike Python's JSON encoder.
+                c.execute('SELECT result = %s::jsonb AS same FROM workflow_jobs WHERE id=%s', (Jsonb(result),job_id))
+                if not c.fetchone()['same']:
                     raise Conflict('completion result mismatch')
                 return row
             self._fenced(c, job_id, lease_token)

@@ -2,6 +2,8 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import jwt
+import pytest
+from psycopg import sql
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from fastapi.testclient import TestClient
@@ -85,3 +87,55 @@ def test_worker_renews_long_running_handler(database):
         return {'ok':True}
     assert Worker(s,p,{'echo':handler},owner='slow',lease_seconds=1).run_once()
     assert s.get(p,row['id'])['status'] == 'succeeded'
+
+
+@pytest.mark.parametrize('unsupported', ['\x00', '\ud800', '\udfff'])
+@pytest.mark.parametrize('in_key', [False, True])
+def test_unsupported_json_strings_return_api_422(database, unsupported, in_key):
+    import json
+    db,_ = database
+    p = principal()
+    class FixedVerifier:
+        def verify(self, authorization):
+            return p
+    payload = {'nested':[{unsupported:'value'} if in_key else {'value':unsupported}]}
+    body = json.dumps({'job_type':'echo','payload':payload},ensure_ascii=True)
+    with TestClient(create_workflow_app(db,FixedVerifier()),raise_server_exceptions=False) as client:
+        response = client.post('/v1/jobs',headers={'Idempotency-Key':'invalid','Content-Type':'application/json'},content=body)
+        assert response.status_code == 422
+        assert response.json() == {'detail':'invalid job request'}
+        assert client.get('/v1/jobs').json()['items'] == []
+
+
+@pytest.mark.parametrize('unsupported', ['\x00', '\ud800', '\udfff'])
+@pytest.mark.parametrize('in_key', [False, True])
+def test_worker_invalid_json_result_records_safe_failure(database, unsupported, in_key):
+    db,_ = database
+    s,p = JobStore(db),principal()
+    row = enqueue(s,p,max_attempts=1)
+    result = {'nested':[{unsupported:'value'} if in_key else {'value':unsupported}]}
+    assert Worker(s,p,{'echo':lambda payload:result},owner='test').run_once()
+    stored = s.get(p,row['id'])
+    assert stored['status'] == 'dead'
+    assert stored['error_code'] == 'invalid_result'
+    assert stored['result'] is None
+
+
+@pytest.mark.parametrize('table', ['workflow_jobs','workflow_attempts'])
+@pytest.mark.parametrize('privilege', ['SELECT','INSERT','UPDATE'])
+def test_readiness_requires_each_runtime_table_privilege(database, table, privilege):
+    db,_ = database
+    class UnusedVerifier:
+        def verify(self, authorization):
+            raise AssertionError('readiness must not request credentials')
+    with TestClient(create_workflow_app(db,UnusedVerifier())) as client:
+        assert client.get('/readyz').status_code == 200
+        with db.transaction(uuid4()) as conn:
+            role = conn.execute('SELECT current_user').fetchone()[0]
+            conn.execute(sql.SQL('REVOKE {} ON {} FROM {}').format(sql.SQL(privilege),sql.Identifier(table),sql.Identifier(role)))
+        try:
+            assert client.get('/readyz').status_code == 503
+        finally:
+            with db.transaction(uuid4()) as conn:
+                conn.execute(sql.SQL('GRANT {} ON {} TO {}').format(sql.SQL(privilege),sql.Identifier(table),sql.Identifier(role)))
+        assert client.get('/readyz').status_code == 200

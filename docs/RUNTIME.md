@@ -57,10 +57,11 @@ use row locks with `FOR UPDATE SKIP LOCKED`; every successful claim increments
 attempts and creates a history record. Expired leases can be reclaimed while
 attempts remain. An expired final attempt becomes dead-letter on the next poll
 of its queue. A caller cannot renew/ack/fail an expired or replaced token.
-Completion replays with the same token and canonical result return the existing
-success without mutation, even after the former lease's expiry; a different
-result conflicts. Failure retries use `min(3600, 2^attempts)` seconds and become
-`dead` at the maximum attempt count. Lease recovery is immediately eligible;
+Completion replays with the same token and JSONB-equivalent result return the
+existing success without mutation, even after the former lease's expiry; a different
+result conflicts. PostgreSQL numeric normalization preserves replay across
+scientific notation and equivalent decimal representations. Failure retries
+use `min(3600, 2^attempts)` seconds and become `dead` at the maximum attempt count. Lease recovery is immediately eligible;
 it does not add the handler-failure retry delay.
 
 Cancellation immediately fences running workers and records cancellation; it
@@ -69,6 +70,11 @@ records cannot be cancelled. Delivery is **at least once**. Applications must
 use provider idempotency/inbox/outbox for business effects and must tolerate a
 handler running after losing its lease. This service never promises exactly
 once execution or runs caller-provided commands/URLs.
+
+Actual NUL (U+0000) and surrogate code points are rejected recursively in JSON
+keys and values before database access; literal backslash Unicode escape text
+remains valid. API validation returns 422 and worker completion records
+`invalid_result` without storing exception details.
 
 Payloads are JSON objects bounded to 60,000 canonical UTF-8 bytes; results are
 bounded to 14,000 bytes. PostgreSQL JSONB representation is separately checked
