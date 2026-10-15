@@ -187,7 +187,9 @@ verified here (no live state inspected).
    `contract.json:23-26` name `infra/tasks` / `infra/scripts` in solo-empire; at solo-empire
    `63efeeb0` those paths do not exist — they live in `platform-ops-cli` since `5f034945`.
 2. **No retry/idempotency/history runtime on platform-workflow main** (`origin/main` `1cbd353e`).
-   `RuntimeGapTests` fails as soon as `src/platform_workflow` lands so this fixture must be updated with real parity tests at that point.
+   The fixture declares `retry_idempotency_runtime: "pending-pr-1"`. `RuntimeGapTests` does **not** fail when PR #1 lands;
+   it prints a warning asking for a BOO-165 follow-up (set `present`, add parity tests). It fails only if the fixture claims
+   `present` while no runtime is on the tree.
 3. **No per-scheduled-run idempotency key** in any legacy scheduler; overlap locks only.
 4. **No durable execution history** anywhere except CI run lists.
 5. **18 local jobs have schedules only through `UPDATE … WHERE is_active = 1`** (rows created
@@ -246,5 +248,6 @@ SOLO_EMPIRE_ROOT=../solo-empire PLATFORM_OPS_CLI_ROOT=../platform-ops-cli python
 `tests/test_scheduler_inventory.py` fails when a schedule in the pinned snapshot is missing from
 the inventory or has a different schedule, when a new source file with a scheduling marker is
 unclassified, when retry/idempotency/history/owner fields are missing or undefined, when an owner
-decision is marked accepted, and when the runtime-gap claim no longer matches this repository. It
+decision is marked accepted, and when the fixture claims a runtime that is not on the tree (a runtime landing
+without a fixture update only prints a warning, so merging PR #1 does not turn CI red). It
 also runs the real extractor against a throwaway Git repository.

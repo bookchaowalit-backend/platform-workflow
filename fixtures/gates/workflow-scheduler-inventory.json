@@ -9,7 +9,7 @@
   "live_state_note": "Schedules are what the pinned source declares. Whether any crontab, Task Scheduler task or systemd timer is installed on a host was not inspected and is not claimed.",
   "platform_workflow_main": {
     "sha": "1cbd353efe2bb6120f98b41cd5996c24b7334c5e",
-    "retry_idempotency_runtime": "absent",
+    "retry_idempotency_runtime": "pending-pr-1",
     "detail": "origin/main ships only contract/scaffold checks; there is no job store, retry, idempotency or execution-history code to exercise. PR #1 (codex/shared-infrastructure-20261015) proposes src/platform_workflow with PostgreSQL-backed idempotent enqueue, max_attempts, exponential backoff and an attempts table; it is unmerged and needs PostgreSQL and third-party packages, so it is not exercised here."
   },
   "target_owners": {
