@@ -36,13 +36,15 @@ finishes before the process closes its pool. Set handler timeouts and a process
 termination grace appropriate to that bound.
 
 Build `Dockerfile` only after pinning a published core wheel/revision in the
-release dependency lock. The local dependency range is not a release lock;
-this checkout does not invent a published artifact or download a hub checkout.
+release dependency lock. The package pins `platform-backend-core==0.1.0`;
+the parent release supplies the offline wheel bundle and immutable artifact digests. This checkout does not
+invent a published artifact or download a hub checkout.
 
 ## Diagnose and recover
 
 `/healthz` checks process liveness. `/readyz` checks connectivity, both service
-tables and enabled/forced RLS; it returns 503 for missing migrations or failed
+tables, schema USAGE, each required SELECT/INSERT/UPDATE privilege, and
+enabled/forced RLS; it returns 503 for missing migrations or failed
 dependencies. `/metrics` exposes shared redacted HTTP counters/duration. Alert
 on sustained readiness failure, queue age, dead-letter growth and exhausted
 connections. Backlog/age collection must use separately authorized workspace

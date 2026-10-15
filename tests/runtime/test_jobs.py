@@ -198,3 +198,27 @@ def test_jsonb_expansion_is_validated_before_inserting(database):
     with pytest.raises(ValueError):
         s.enqueue(p,key='expanded',queue='default',job_type='echo',payload={'x':[0]*25000})
     assert s.list(p) == []
+
+
+def test_scientific_notation_completion_replay_is_idempotent(database):
+    db,_ = database
+    s,p = JobStore(db),principal()
+    enqueue(s,p)
+    job = s.claim(p,owner='test')
+    result = {'n':1e20,'nested':[1e-20,{'whole':1.0}]}
+    first = s.complete(p,job['id'],lease_token=job['lease_token'],result=result)
+    repeated = s.complete(p,job['id'],lease_token=job['lease_token'],result=result)
+    assert repeated['id'] == first['id']
+    with pytest.raises(Conflict):
+        s.complete(p,job['id'],lease_token=job['lease_token'],result={'n':2e20})
+
+
+def test_literal_backslash_unicode_escape_is_valid_payload_and_result(database):
+    db,_ = database
+    s,p = JobStore(db),principal()
+    literal = r'\u0000 and \ud800'
+    row = s.enqueue(p,key='literal',queue='default',job_type='echo',payload={literal:[literal]})
+    job = s.claim(p,owner='test')
+    result = s.complete(p,job['id'],lease_token=job['lease_token'],result={literal:literal})
+    assert s.get(p,row['id'])['payload'] == {literal:[literal]}
+    assert result['result'] == {literal:literal}

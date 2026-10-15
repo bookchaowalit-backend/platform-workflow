@@ -61,9 +61,14 @@ def create_workflow_app(database, verifier):
             if not database.ready():
                 raise RuntimeError('database unavailable')
             with database.transaction(UUID(int=0)) as conn:
-                rows = conn.execute("""SELECT relrowsecurity,relforcerowsecurity FROM pg_catalog.pg_class
+                rows = conn.execute("""SELECT relrowsecurity,relforcerowsecurity,
+                    has_schema_privilege(relnamespace,'USAGE'),
+                    has_table_privilege(oid,'SELECT'),
+                    has_table_privilege(oid,'INSERT'),
+                    has_table_privilege(oid,'UPDATE')
+                    FROM pg_catalog.pg_class
                     WHERE oid IN (to_regclass('workflow_jobs'),to_regclass('workflow_attempts'))""").fetchall()
-                ready = len(rows) == 2 and all(row == (True,True) for row in rows)
+                ready = len(rows) == 2 and all(all(value is True for value in row) for row in rows)
                 conn.execute('SELECT id FROM workflow_jobs LIMIT 0')
                 conn.execute('SELECT job_id FROM workflow_attempts LIMIT 0')
         except Exception:
