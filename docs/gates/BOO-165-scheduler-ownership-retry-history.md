@@ -1,8 +1,8 @@
 # BOO-165 — Scheduler ownership, retry/idempotency and execution-history parity
 
-Status: **evidence only**. Nothing here changes a schedule, installs or removes a
-timer, moves a runtime, or records an owner decision. The decision section at the
-end is a proposal.
+Status: **inventory accepted by the owner on 2026-10-16** (see the decision section at the end).
+Nothing here changes a schedule, installs or removes a timer, or moves a runtime. Only the
+69-job inventory was accepted; the ownership, retry, idempotency and history rules below are still open.
 
 ## Gate
 
@@ -214,9 +214,21 @@ verified here (no live state inspected).
     at `f3729594` and re-extracts its 3 timers against the snapshot (`BOO165_REQUIRE_OPS_SOURCE=1`). solo-empire is
     not reachable from CI, so its 117 records are compared with the real source only by the local re-extraction.
 
-## Owner decision — PROPOSED, NOT ACCEPTED
+## Owner decision — ACCEPTED (owner decision 2026-10-16)
 
-The owner must accept or amend each item; nothing below is in effect.
+Owner's answer, verbatim: "ทั้งหมด ยกเว้น 140/256 (Recommended)", relayed via the parent session
+(`local_a6dedf75`). It accepts the recommended option for every pending gate except BOO-140 and BOO-256.
+
+**Accepted for BOO-165:** accept the 69-job scheduler inventory.
+
+That covers the 69 jobs in `fixtures/gates/workflow-scheduler-inventory.json` and the pinned snapshot
+as the record of scheduler ownership, retry/idempotency behaviour and execution-history locations.
+It does not change any schedule, runtime, registry or UI.
+
+### Still open (the owner did not decide these)
+
+The following proposals were not part of the accepted option and remain **PROPOSED, NOT ACCEPTED**.
+The per-job `target_owners` in the fixture also stay proposed. Each item needs its own decision:
 
 1. **Scheduler ownership:** platform-workflow becomes the owner of schedule definitions and
    execution state (attempt history) for re-homed jobs; job logic stays in the owning
@@ -253,8 +265,8 @@ SOLO_EMPIRE_ROOT=../solo-empire PLATFORM_OPS_CLI_ROOT=../platform-ops-cli python
 
 `tests/test_scheduler_inventory.py` fails when a schedule in the pinned snapshot is missing from
 the inventory or has a different schedule, when a new source file with a scheduling marker is
-unclassified, when retry/idempotency/history/owner fields are missing or undefined, when an owner
-decision is marked accepted, and when the fixture claims a runtime that is not on the tree (a runtime landing
+unclassified, when retry/idempotency/history/owner fields are missing or undefined, when the owner decision is no longer
+recorded as accepted with its date, verbatim answer and relay, when a per-job target owner is marked accepted, and when the fixture claims a runtime that is not on the tree (a runtime landing
 without a fixture update only prints a warning, so merging PR #1 does not turn CI red). It
 also runs the real extractor against a throwaway Git repository. `SnapshotSourceLineTests` only checks that each
 record is consistent with the source line stored in the same snapshot; comparison with the real repositories is
