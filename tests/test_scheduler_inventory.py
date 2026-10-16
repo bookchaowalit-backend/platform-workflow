@@ -89,12 +89,44 @@ class InventoryParityTests(unittest.TestCase):
         errors = si.validate(inventory, self.snapshot)
         self.assertTrue(any("retry-forever" in e for e in errors), errors)
 
-    def test_owner_decision_cannot_be_marked_accepted(self) -> None:
+    def test_owner_decision_recorded_as_accepted_2026_10_16(self) -> None:
+        decision = self.inventory["owner_decision"]
+        self.assertEqual(decision["status"], "accepted")
+        self.assertEqual(decision["date"], "2026-10-16")
+        self.assertEqual(decision["accepted"], "accept the 69-job scheduler inventory")
+        self.assertEqual(decision["verbatim"], "ทั้งหมด ยกเว้น 140/256 (Recommended)")
+        self.assertEqual(len(self.inventory["jobs"]), 69)
+        doc = (ROOT / "docs" / "gates" / "BOO-165-scheduler-ownership-retry-history.md").read_text(encoding="utf-8")
+        self.assertIn("## Owner decision — ACCEPTED (owner decision 2026-10-16)", doc)
+        self.assertNotIn("Owner decision — PROPOSED, NOT ACCEPTED", doc)
+
+    def test_removed_decision_marker_or_date_is_reported(self) -> None:
+        for mutate, expected in (
+            (lambda d: d.pop("date"), "ISO date"),
+            (lambda d: d.update(date=""), "ISO date"),
+            (lambda d: d.pop("verbatim"), "needs verbatim"),
+            (lambda d: d.update(status="ACCEPTED-ish"), "must be 'proposed' or 'accepted'"),
+        ):
+            inventory = copy.deepcopy(self.inventory)
+            mutate(inventory["owner_decision"])
+            errors = si.validate(inventory, self.snapshot)
+            self.assertTrue(any(expected in e for e in errors), (expected, errors))
+        inventory = copy.deepcopy(self.inventory)
+        inventory["owner_decision"] = "ACCEPTED"
+        self.assertTrue(any("must be an object" in e for e in si.validate(inventory, self.snapshot)))
+        # The marker removed entirely (status gone) must also fail the committed-fixture assertion.
+        inventory = copy.deepcopy(self.inventory)
+        inventory["owner_decision"].pop("status")
+        self.assertTrue(si.validate(inventory, self.snapshot))
+
+    def test_target_owners_remain_proposed(self) -> None:
+        # The owner accepted the inventory only; per-job target owners stay open.
+        for name, target in self.inventory["target_owners"].items():
+            self.assertEqual(target["decision"], "PROPOSED, NOT ACCEPTED", name)
         inventory = copy.deepcopy(self.inventory)
         next(iter(inventory["target_owners"].values()))["decision"] = "ACCEPTED"
         errors = si.validate(inventory, self.snapshot)
         self.assertTrue(any("PROPOSED, NOT ACCEPTED" in e for e in errors), errors)
-        self.assertEqual(self.inventory["owner_decision"], "PROPOSED, NOT ACCEPTED")
 
     def test_citation_must_point_at_a_snapshot_record(self) -> None:
         inventory = copy.deepcopy(self.inventory)

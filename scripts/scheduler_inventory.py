@@ -570,9 +570,22 @@ def validate(inventory: dict[str, Any], snapshot: dict[str, Any]) -> list[str]:
     for name, policy in policies.items():
         if not policy.get("citations"):
             errors.append(f"retry policy {name} has no citation")
+    decision = inventory.get("owner_decision")
+    if not isinstance(decision, dict):
+        errors.append("owner_decision must be an object with status/date/accepted/verbatim")
+    else:
+        status = decision.get("status")
+        if status not in {"proposed", "accepted"}:
+            errors.append(f"owner_decision.status {status!r} must be 'proposed' or 'accepted'")
+        if status == "accepted":
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(decision.get("date") or "")):
+                errors.append("accepted owner_decision needs an ISO date")
+            for field in ("accepted", "verbatim", "relayed_via"):
+                if not decision.get(field):
+                    errors.append(f"accepted owner_decision needs {field}")
     for name, target in targets.items():
         if target.get("decision") != "PROPOSED, NOT ACCEPTED":
-            errors.append(f"target owner {name} must stay 'PROPOSED, NOT ACCEPTED' until the owner signs it")
+            errors.append(f"target owner {name} must stay 'PROPOSED, NOT ACCEPTED': the 2026-10-16 decision accepted the inventory, not target owners")
     for name, history in histories.items():
         if not history.get("citations"):
             errors.append(f"execution history {name} has no citation")

@@ -5,7 +5,23 @@
   "contract": "bookchaowalit/architecture-docs:systems/architecture/platform-repository-split.md",
   "contract_sha": "ed9418091820f32e5cda6b6634b8e0bf98ec6fe8",
   "snapshot": "fixtures/gates/workflow-scheduler-source-snapshot.json",
-  "owner_decision": "PROPOSED, NOT ACCEPTED",
+  "owner_decision": {
+    "status": "accepted",
+    "date": "2026-10-16",
+    "accepted": "accept the 69-job scheduler inventory",
+    "verbatim": "ทั้งหมด ยกเว้น 140/256 (Recommended)",
+    "relayed_via": "parent session local_a6dedf75",
+    "still_open": [
+      "D1 scheduler ownership of re-homed jobs (platform-workflow owns schedule definitions and attempt history)",
+      "D2 retire the 5 orphan rows; re-register the 40 JOB_MAP jobs only on owner request",
+      "D3 retry parity rule max_attempts = 2 per scheduled run with backoff",
+      "D4 idempotency rule (job_id, scheduled_for) with lease-based overlap",
+      "D5 execution history defined forward, no backfill",
+      "D6 GitHub Actions stay in CI; data-capture installers move with data repos; retire SoloEmpire-DNS-Sync",
+      "D7 registry/contract source_paths fix to platform-ops-cli",
+      "per-job target_owners (all still PROPOSED, NOT ACCEPTED)"
+    ]
+  },
   "live_state_note": "Schedules are what the pinned source declares. Whether any crontab, Task Scheduler task or systemd timer is installed on a host was not inspected and is not claimed.",
   "platform_workflow_main": {
     "sha": "1cbd353efe2bb6120f98b41cd5996c24b7334c5e",

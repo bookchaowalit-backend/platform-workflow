@@ -15,7 +15,7 @@ parity evidence.
 
 - Inventory scheduled jobs (cron setup scripts and Task entry points) with owner, idempotency and retry semantics.
   Evidence for BOO-165: [`docs/gates/BOO-165-scheduler-ownership-retry-history.md`](gates/BOO-165-scheduler-ownership-retry-history.md)
-  (69 jobs, fixture `fixtures/gates/workflow-scheduler-inventory.json`); owner decision still pending.
+  (69 jobs, fixture `fixtures/gates/workflow-scheduler-inventory.json`); inventory accepted by the owner on 2026-10-16; ownership/retry/idempotency/history rules still open.
 - Define an execution-history record contract before any durable queue is introduced.
 
 ### P1
