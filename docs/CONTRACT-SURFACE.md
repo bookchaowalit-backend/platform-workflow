@@ -6,8 +6,8 @@ This page documents the API, event, CLI, storage and configuration surface that
 listed there is missing from this page.
 
 - Platform: `workflow` (contract `book-platform.contract.v1`, API `v1`)
-- Status: `scaffolded`; source status: `current-implementation-in-solo-empire`
-- Current implementation: `solo-empire` at `infra/tasks`, `infra/scripts`
+- Status: `pilot`; runtime stage: **implemented-local**, not deployed
+- Durable runtime: `platform-workflow` at `src/platform_workflow`; legacy task compatibility remains in the hub.
 - Depends on: `identity`, `observability`
 
 Interfaces marked `current-in-solo-empire` are served by the `solo-empire`
@@ -30,8 +30,8 @@ consumer.
 - Jobs are Task (`go-task`) entry points: the root `Taskfile.yml` includes
   `infra/tasks/{ai,data,finance,governance,integrations,learning,operations,platform,portfolio,products,runtime,trading}.yml`
   with flattened names (for example `task platforms:check`).
-- There is no durable queue, scheduler state or execution history store yet;
-  those registry capabilities are migration targets.
+- The durable queue, scheduled run time and attempts history now exist locally;
+  consumer migration and production acceptance remain pending.
 - Business invariants stay in the platform that calls a workflow; this
   platform owns execution state only.
 
@@ -43,6 +43,13 @@ consumer.
 
 ## Out of scope
 
-No production provider integration, credential, database writer or customer
-payload lives in this repository. Record parity, privacy and rollback evidence
+No production provider integration, credential or customer payload lives in this repository. Record parity, privacy and rollback evidence
 in the parent platform registry before any cutover.
+
+## Durable runtime API
+
+`workflow.http.durable-jobs` provides `/v1/jobs` and `/v1/worker` operations with
+verified workspace JWTs, exact scopes, durable idempotency and lease fencing.
+The complete API, limits and state transitions are in [RUNTIME.md](RUNTIME.md);
+release/rollback requirements are in [RUNBOOK.md](RUNBOOK.md). This API is local
+implementation evidence and does not assert a production endpoint.
