@@ -2,16 +2,16 @@
 import concurrent.futures
 import multiprocessing
 import os
-import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import psycopg
+import pytest
+from platform_backend_core import Database, MigrationRunner, Principal
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
-import pytest
-from platform_backend_core import Database, Principal, MigrationRunner
-from platform_workflow import JobStore, Conflict, NotFound, LeaseLost, PermissionDenied, migrations
+
+from platform_workflow import Conflict, JobStore, LeaseLost, NotFound, PermissionDenied, migrations
 
 
 def principal(workspace=None, scopes=('jobs:read', 'jobs:write', 'jobs:work')):
@@ -122,7 +122,7 @@ def test_expired_lease_recovers_and_fences_all_mutations(database):
 def test_scheduling_backoff_dead_letter_and_cancellation(database):
     db, _ = database
     s, p = JobStore(db), principal()
-    future = enqueue(s, p, run_at=datetime.now(timezone.utc)+timedelta(days=1))
+    future = enqueue(s, p, run_at=datetime.now(UTC)+timedelta(days=1))
     assert s.claim(p, owner='test') is None
     assert s.cancel(p, future['id'])['status'] == 'cancelled'
     assert s.cancel(p, future['id'])['status'] == 'cancelled'
@@ -182,8 +182,8 @@ def test_concurrent_enqueue_once_backlog_bound_and_missing_context(database):
         enqueue(s,p)
     assert enqueue(s,other)
     with psycopg.connect(database[1]) as conn:
-        assert conn.execute('SELECT count(*) FROM workflow_jobs').fetchone()[0] == 0
-        assert conn.execute('SELECT count(*) FROM workflow_attempts').fetchone()[0] == 0
+        assert conn.execute('SELECT count(*) FROM workflow_jobs').fetchone() == (0,)
+        assert conn.execute('SELECT count(*) FROM workflow_attempts').fetchone() == (0,)
     job = s.claim(p,owner='test')
     with db.transaction(other.workspace) as conn:
         assert conn.execute('SELECT count(*) FROM workflow_attempts').fetchone()[0] == 0

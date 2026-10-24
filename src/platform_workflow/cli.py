@@ -3,7 +3,9 @@ import argparse
 import os
 import signal
 import threading
+
 from platform_backend_core import Database, MigrationRunner, TokenVerifier
+
 from .app import create_workflow_app
 from .migrations import migrations
 from .store import JobStore

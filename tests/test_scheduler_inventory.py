@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import copy
 import importlib.util
-import json
 import os
 import shutil
 import subprocess
@@ -220,6 +219,24 @@ class ExtractorTests(unittest.TestCase):
             self.assertEqual(si.reparse_line(record), expected)
 
 
+class CronMigrationParserTests(unittest.TestCase):
+    """parse_cron_migration on inline SQL, without a Git fixture."""
+
+    def test_string_schedule_is_recorded(self) -> None:
+        sql = ("INSERT INTO cron_jobs (name, description, schedule, job_type, params, is_active)\n"
+               "SELECT 'Demo', 'd', 'daily', 'demo_job', '{}', 1;\n")
+        [record] = si.parse_cron_migration(sql, "m.sql")
+        self.assertEqual(record.schedule, "daily")
+
+    def test_numeric_schedule_literal_is_rejected(self) -> None:
+        # A bare number is not a cron schedule; it used to be recorded as an int, so the
+        # inventory silently carried a non-string schedule (found by mypy, 2026-10-24).
+        sql = ("INSERT INTO cron_jobs (name, description, schedule, job_type, params, is_active)\n"
+               "SELECT 'Demo', 'd', 5, 'demo_job', '{}', 1;\n")
+        with self.assertRaisesRegex(ValueError, "schedule must be a string literal"):
+            si.parse_cron_migration(sql, "m.sql")
+
+
 @unittest.skipUnless(os.environ.get("SOLO_EMPIRE_ROOT") and os.environ.get("PLATFORM_OPS_CLI_ROOT"),
                      "set SOLO_EMPIRE_ROOT and PLATFORM_OPS_CLI_ROOT to re-extract from the pinned sources")
 class PinnedSourceTests(unittest.TestCase):
@@ -241,6 +258,7 @@ class OpsSourceTests(unittest.TestCase):
     def test_platform_ops_cli_reextracts_to_snapshot(self) -> None:
         self.assertTrue(_OPS_ROOT and Path(_OPS_ROOT).is_dir(),
                         "BOO165_REQUIRE_OPS_SOURCE=1 but PLATFORM_OPS_CLI_ROOT is not a checkout")
+        assert _OPS_ROOT is not None
         snapshot = si.load(si.SNAPSHOT_PATH)
         self.assertEqual(si.verify_source("platform-ops-cli", Path(_OPS_ROOT), snapshot), [])
         ids = sorted(r["id"] for r in snapshot["records"] if r["source"] == "platform-ops-cli")

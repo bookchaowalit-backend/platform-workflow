@@ -46,6 +46,12 @@ there first, then copy the schema and its pin here). Pass
 checkout. `python3 scripts/check_registry_alignment.py --solo-empire ../solo-empire`
 compares this contract with the parent platform registry (local only; read-only).
 
+The jobs runtime (`src/platform_workflow/`) is developed on the locked
+environment: `uv sync --frozen --all-extras`, then `ruff check .`, `mypy` and
+`python -m pytest` (set `PLATFORM_TEST_DSN` to a disposable PostgreSQL admin DSN
+for `tests/runtime/`). CI runs the same through the shared `ci-python` workflow
+with a coverage gate, next to the contract job and the shared security workflow.
+
 The check validates repository shape and contract metadata only. It does not
 claim deployment, provider connectivity, data migration, or production
 readiness.

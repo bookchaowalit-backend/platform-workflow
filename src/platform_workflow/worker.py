@@ -1,5 +1,6 @@
 """Bounded sequential worker. Applications inject a trusted handler registry."""
 import threading
+
 from .store import LeaseLost
 
 

@@ -1,17 +1,18 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from uuid import uuid4
 
 import jwt
 import pytest
-from psycopg import sql
-from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from platform_backend_core import TokenVerifier
+from psycopg import sql
+from test_jobs import database, enqueue, principal
+
 from platform_workflow import JobStore
 from platform_workflow.app import create_workflow_app
 from platform_workflow.worker import Worker
-from test_jobs import database, principal, enqueue
 
 
 def test_verified_api_scope_workspace_and_worker_flow(database):
@@ -20,7 +21,7 @@ def test_verified_api_scope_workspace_and_worker_flow(database):
     public = private.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
     verifier = TokenVerifier(issuer='https://test.invalid', audience='workflow', public_key=public)
     def auth(ws, scopes):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         token = jwt.encode({'sub':str(uuid4()), 'ws':str(ws),'scope':' '.join(scopes),
             'iss':'https://test.invalid','aud':'workflow','iat':now,'exp':now+timedelta(minutes=5),'jti':str(uuid4())}, private, algorithm='RS256')
         return {'Authorization':'Bearer '+token}

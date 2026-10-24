@@ -7,8 +7,8 @@ has not replaced the existing task commands or passed a production cutover gate.
 ## Interfaces
 
 Install `platform-workflow` and a pinned `platform-backend-core` wheel/revision.
-Development may install the adjacent checkouts with `pip install -e
-../platform-backend-core -e '.[test]'`. Runtime imports only the installed core,
+Development uses the locked environment: `uv sync --frozen --all-extras`
+(`uv.lock`; core comes from its reviewed Git commit via `[tool.uv.sources]`). Runtime imports only the installed core,
 never the hub, a sibling's database, or an absolute checkout path.
 
 `platform_workflow.app.create_workflow_app(database, verifier)` returns an

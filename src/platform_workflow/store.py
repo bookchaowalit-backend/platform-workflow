@@ -2,7 +2,7 @@
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from psycopg.rows import dict_row
@@ -86,7 +86,7 @@ class JobStore:
         if run_at is not None:
             if not isinstance(run_at, datetime) or run_at.tzinfo is None:
                 raise ValueError('run_at must include timezone')
-            run_at = run_at.astimezone(timezone.utc)
+            run_at = run_at.astimezone(UTC)
         fingerprint = hashlib.sha256(_json({'queue':queue,'type':job_type,'payload':payload,
             'run_at': run_at.isoformat() if run_at else None,'max_attempts':max_attempts}, 65536).encode()).hexdigest()
         with self.database.transaction(principal.workspace) as conn, conn.cursor(row_factory=dict_row) as c:

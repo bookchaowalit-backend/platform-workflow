@@ -49,3 +49,23 @@ jobs:
           PLATFORM_OPS_CLI_ROOT: ${{ github.workspace }}/.ci-sources/platform-ops-cli
           BOO165_REQUIRE_OPS_SOURCE: "1"
         run: bash scripts/check.sh
+
+  # Shared workflow on the locked environment: uv sync --frozen --all-extras (uv.lock, with
+  # platform-backend-core pinned to a reviewed Git commit), Ruff, mypy ([tool.mypy]) and the
+  # whole pytest suite, including the PostgreSQL runtime tests formerly in shared-runtime.yml,
+  # under a coverage gate; then the wheel build.
+  python:
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-python.yml@87dc5e1c7e0416886a6371d5a101bb2ccba38edd # v1.1.1
+    with:
+      python-version: "3.12"
+      postgres: true
+      format-check: false # follow-up: adopt ruff format
+      # Ratchet: measured 77.89% on 2026-10-24 (ADR-0004: threshold = measured, rounded down).
+      # The pinned-source re-extraction tests run only in the contract job, so they are not counted.
+      coverage-threshold: "77"
+      test-command: |
+        PLATFORM_TEST_DSN="$DATABASE_URL" python -m pytest -q --cov --cov-report=
+        uv build --wheel --out-dir dist .
+
+  security:
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@87dc5e1c7e0416886a6371d5a101bb2ccba38edd # v1.1.1

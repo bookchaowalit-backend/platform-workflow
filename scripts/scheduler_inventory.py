@@ -26,9 +26,10 @@ import json
 import re
 import subprocess
 import sys
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT_PATH = ROOT / "fixtures" / "gates" / "workflow-scheduler-source-snapshot.json"
@@ -112,10 +113,16 @@ def parse_job_map(text: str, path: str) -> list[Record]:
             continue
         if target.id == "JOB_MAP":
             for key, value in zip(node.value.keys, node.value.values):
+                if key is None:
+                    raise ValueError("JOB_MAP must not use ** unpacking")
                 script, args = ast.literal_eval(value)
                 entries.append((ast.literal_eval(key), script, list(args), key.lineno))
         elif target.id == "JOB_TIMEOUTS":
-            timeouts = {ast.literal_eval(k): ast.literal_eval(v) for k, v in zip(node.value.keys, node.value.values)}
+            timeouts = {}
+            for k, v in zip(node.value.keys, node.value.values):
+                if k is None:
+                    raise ValueError("JOB_TIMEOUTS must not use ** unpacking")
+                timeouts[ast.literal_eval(k)] = ast.literal_eval(v)
     records = []
     for job_type, script, args, line in entries:
         records.append(Record(
@@ -192,6 +199,8 @@ def parse_cron_migration(text: str, path: str) -> list[Record]:
                 row = dict(zip(columns, literals[start:start + len(columns)]))
                 schedule, position = row["schedule"]
                 line = _line_of(text, position)
+                if not isinstance(schedule, str):
+                    raise ValueError(f"{path}:{line}: cron_jobs schedule must be a string literal")
                 is_active = row.get("is_active", (1, 0))[0]
                 records.append(Record(
                     id=f"local-cron:{row['job_type'][0]}", kind="cron-jobs-insert", schedule=schedule,
