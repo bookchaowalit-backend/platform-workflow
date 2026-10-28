@@ -25,6 +25,10 @@ class PermissionDenied(Exception):
     pass
 
 
+class InvalidInput(ValueError):
+    """Client-supplied data failed domain validation (HTTP 422). Any other ValueError is a bug."""
+
+
 def _scope(principal, required):
     if required not in principal.scopes:
         raise PermissionDenied(required)
@@ -33,7 +37,11 @@ def _scope(principal, required):
 
 
 def _json(value, limit):
-    encoded = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False)
+    try:
+        encoded = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False)
+    except ValueError:
+        # NaN/Infinity (Python's JSON parser accepts them) or a circular reference.
+        raise InvalidInput('JSON is not representable') from None
     # PostgreSQL JSONB rejects actual NUL and surrogate code points in both
     # object keys and values. Inspect decoded strings, preserving literal escapes.
     pending = [value]
@@ -41,20 +49,20 @@ def _json(value, limit):
         item = pending.pop()
         if isinstance(item, str):
             if any(character == '\x00' or 0xD800 <= ord(character) <= 0xDFFF for character in item):
-                raise ValueError('JSON contains unsupported Unicode')
+                raise InvalidInput('JSON contains unsupported Unicode')
         elif isinstance(item, dict):
             pending.extend(item.keys())
             pending.extend(item.values())
         elif isinstance(item, (list, tuple)):
             pending.extend(item)
     if len(encoded.encode()) > limit:
-        raise ValueError('JSON exceeds size limit')
+        raise InvalidInput('JSON exceeds size limit')
     return encoded
 
 
 def _name(value, label):
     if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,80}', value):
-        raise ValueError(f'invalid {label}')
+        raise InvalidInput(f'invalid {label}')
     return value
 
 
@@ -70,22 +78,22 @@ class JobStore:
         # JSONB adds whitespace and expands numeric exponents: bound its real form too.
         c.execute('SELECT octet_length(%s::jsonb::text) AS size', (Jsonb(value),))
         if c.fetchone()['size'] > limit:
-            raise ValueError('stored JSON exceeds size limit')
+            raise InvalidInput('stored JSON exceeds size limit')
 
     def enqueue(self, principal, *, key, queue, job_type, payload, run_at=None, max_attempts=3):
         _scope(principal, 'jobs:write')
         if not isinstance(key, str) or not 1 <= len(key) <= 200:
-            raise ValueError('invalid idempotency key')
+            raise InvalidInput('invalid idempotency key')
         _name(queue, 'queue')
         _name(job_type, 'job type')
         if not isinstance(payload, dict):
-            raise ValueError('payload must be an object')
+            raise InvalidInput('payload must be an object')
         _json(payload, 60000)  # margin for PostgreSQL JSONB textual whitespace
         if type(max_attempts) is not int or not 1 <= max_attempts <= 100:
-            raise ValueError('invalid max_attempts')
+            raise InvalidInput('invalid max_attempts')
         if run_at is not None:
             if not isinstance(run_at, datetime) or run_at.tzinfo is None:
-                raise ValueError('run_at must include timezone')
+                raise InvalidInput('run_at must include timezone')
             run_at = run_at.astimezone(UTC)
         fingerprint = hashlib.sha256(_json({'queue':queue,'type':job_type,'payload':payload,
             'run_at': run_at.isoformat() if run_at else None,'max_attempts':max_attempts}, 65536).encode()).hexdigest()
@@ -123,7 +131,7 @@ class JobStore:
     def list(self, principal, *, limit=50, after=None):
         _scope(principal, 'jobs:read')
         if type(limit) is not int or not 1 <= limit <= 100:
-            raise ValueError('limit must be 1..100')
+            raise InvalidInput('limit must be 1..100')
         with self.database.transaction(principal.workspace) as conn, conn.cursor(row_factory=dict_row) as c:
             c.execute('SELECT * FROM workflow_jobs WHERE (%s::uuid IS NULL OR id>%s::uuid) ORDER BY id LIMIT %s', (after,after,limit))
             return c.fetchall()
@@ -150,14 +158,14 @@ class JobStore:
     @staticmethod
     def _lease_seconds(seconds):
         if type(seconds) is not int or not 1 <= seconds <= 900:
-            raise ValueError('lease_seconds must be 1..900')
+            raise InvalidInput('lease_seconds must be 1..900')
 
     def claim(self, principal, *, owner, queues=('default',), lease_seconds=30):
         _scope(principal, 'jobs:work')
         self._lease_seconds(lease_seconds)
         _name(owner, 'owner')
         if not queues or len(queues)>20:
-            raise ValueError('queues must contain 1..20 entries')
+            raise InvalidInput('queues must contain 1..20 entries')
         for queue in queues:
             _name(queue, 'queue')
         with self.database.transaction(principal.workspace) as conn, conn.cursor(row_factory=dict_row) as c:

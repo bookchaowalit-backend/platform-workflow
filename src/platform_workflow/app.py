@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from platform_backend_core import create_app, require_scope
 from pydantic import BaseModel, ConfigDict, Field
 
-from .store import Conflict, JobStore, NotFound, PermissionDenied
+from .store import Conflict, InvalidInput, JobStore, NotFound, PermissionDenied
 
 
 class StrictBody(BaseModel):
@@ -88,7 +88,9 @@ def create_workflow_app(database, verifier):
     async def denied(request, exc):
         return JSONResponse({'detail':'scope denied'},status_code=403)
 
-    @app.exception_handler(ValueError)
+    # Only the domain InvalidInput is a client error; any other exception (an unexpected
+    # ValueError included) is a server bug and becomes the shared core's redacted 500.
+    @app.exception_handler(InvalidInput)
     async def invalid(request, exc):
         return JSONResponse({'detail':'invalid job request'},status_code=422)
 
