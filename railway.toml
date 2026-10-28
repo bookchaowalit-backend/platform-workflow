@@ -1,4 +1,4 @@
-# Staged only. Configure exact core wheel/revision and isolated runtime role before release.
+# Staged only. The image builds from uv.lock (docs/RUNTIME.md); configure the isolated runtime role before release.
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"

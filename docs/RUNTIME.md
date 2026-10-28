@@ -6,10 +6,38 @@ has not replaced the existing task commands or passed a production cutover gate.
 
 ## Interfaces
 
-Install `platform-workflow` and a pinned `platform-backend-core` wheel/revision.
+Install `platform-workflow` with `platform-backend-core` from `uv.lock`.
 Development uses the locked environment: `uv sync --frozen --all-extras`
 (`uv.lock`; core comes from its reviewed Git commit via `[tool.uv.sources]`). Runtime imports only the installed core,
 never the hub, a sibling's database, or an absolute checkout path.
+
+### Container image
+
+`docker build .` works from a clean checkout; no pre-staged wheel bundle is
+needed. The `Dockerfile` is two stages:
+
+1. `build` (`python:3.12-slim` plus `git` and uv 0.13.1, the CI version, pinned
+   by image digest): `uv sync --frozen --no-dev --no-editable` installs this
+   service and every runtime dependency from `uv.lock` into `/opt/venv`, so
+   `platform-backend-core` comes from the same reviewed commit
+   (`d00e0119c2e47da3942d9c7b4b88828953f8bc5a`) CI installs, with the lock's hashes.
+   No test or dev extras are installed.
+2. `runtime` (`python:3.12-slim`, no git, no uv): copies only `/opt/venv`, runs
+   as UID/GID `65532`, `PORT=8080`, and keeps `CMD ["platform-workflow", "api"]`
+   (`railway.toml` sets the same start command). Run `migrate` and workers as
+   separate services or one-offs from the same image with a command override.
+
+`.dockerignore` keeps `.git`, `.venv`, tests, build output and `.env*` out of the
+build context. CI job `image` in `check.yml` runs `docker build` on every push and
+pull request, then checks that the image imports the service and runs as a
+non-root user. It never pushes or deploys. `tests/test_build_hygiene.py` (part of
+`scripts/check.sh`) fails if the Dockerfile copies a git-ignored path, stops being
+multi-stage, resolves anything outside `uv.lock` (`pip install`, a second core
+pin), runs the final stage as anything but `65532:65532` or changes the CMD, if
+`[tool.uv.sources]` and `uv.lock` disagree on the core commit, if CI stops
+building the image, or if any workflow `uses:` is not pinned to a 40-hex commit
+SHA (tag in a trailing comment). Upgrading the core means changing the commit in
+`[tool.uv.sources]` and re-locking (`uv lock`).
 
 `platform_workflow.app.create_workflow_app(database, verifier)` returns an
 independent FastAPI app. `database` and `verifier` are the shared core's
@@ -127,3 +155,29 @@ The suite tests actual PostgreSQL locks/RLS, two spawned independent claim
 processes, concurrent enqueue, expired lease recovery/fencing, heartbeat,
 retry/dead-letter, cancellation, JWT scope/workspace boundaries and missing
 migration readiness. No provider connection or external message occurs.
+
+## Build hygiene 2026-10-29 (branch `build-hygiene`)
+
+Ported from `platform-developer` `8047108`, adapted to this repository's `uv.lock`:
+
+1. The `Dockerfile` already built from a clean checkout, but single-stage, with
+   `pip install` of a core archive URL that duplicated the lock's pin, and with no
+   `.dockerignore`. It is now the two-stage `uv sync --frozen` build under
+   "Container image", and CI job `image` builds it without pushing.
+2. `check.yml` used `actions/checkout@v4` and `actions/setup-python@v5` by tag.
+   Both are pinned to commit SHAs (`11d5960a...` = v4, `a26af69b...` = v5;
+   lightweight tags, resolved with `gh api .../git/ref/tags/...`), tag in a comment.
+
+RED (tests written first, run on the old files, Python 3.12):
+`python -m unittest tests.test_build_hygiene` failed 5 of 9 (no `.dockerignore`;
+no `docker build` in CI; no `uv.lock`/`uv sync --frozen`; one `FROM`; unpinned
+actions). The checker self-test, lock/`[tool.uv.sources]` agreement, the
+clean-checkout COPY check and the non-root `USER`/CMD check passed.
+
+GREEN: `bash scripts/check.sh` 67 unit tests OK (2 skipped without the pinned
+ops source); `ruff check .` and `mypy` clean; `python -m pytest -q --cov` with a
+local PostgreSQL (`pgserver`) 97 passed, 2 skipped, coverage 78% (gate 77). The
+build stage was rehearsed without Docker (`uv sync --frozen --no-dev
+--no-editable` into a fresh venv from a clean copy, then
+`import platform_backend_core, platform_workflow.app`); the image itself is
+verified only by the CI `image` job. Nothing was pushed to a registry or deployed.
