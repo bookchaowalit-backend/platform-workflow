@@ -181,3 +181,33 @@ build stage was rehearsed without Docker (`uv sync --frozen --no-dev
 --no-editable` into a fresh venv from a clean copy, then
 `import platform_backend_core, platform_workflow.app`); the image itself is
 verified only by the CI `image` job. Nothing was pushed to a registry or deployed.
+
+## 422 only for domain input — 2026-10-29 (branch `invalid-input`)
+
+Ported from `platform-developer` `8047108` and `platform-commerce` `main`. The app
+mapped every `ValueError` to 422 `invalid job request`, so a server bug surfaced
+as a client error. `store.InvalidInput(ValueError)` (exported by the package) is
+now raised for every job and worker-API bound: idempotency key, queue, job type,
+owner and error-code names, payload/result type, size, Unicode and JSONB-expanded
+size, `max_attempts`, naive `run_at`, list limit, lease seconds and the queue
+count. Only that maps to 422. Request-schema errors keep the core's 422; any other
+exception, including an unexpected `ValueError`, is the shared core's redacted 500.
+
+`_json` now turns `json.dumps(allow_nan=False)`'s own `ValueError` into
+`InvalidInput`: the request parser accepts `NaN`/`Infinity`, so without it a
+`NaN` payload would have become a 500. Deliberately still a plain `ValueError`
+(never 422): the `JobStore` pending bound (service configuration) and the CLI's
+missing-environment check. The worker still records `invalid_result` for a
+handler result that is a `ValueError` (now `InvalidInput`) or `TypeError`.
+Readiness is unchanged.
+
+RED (`tests/runtime/test_error_mapping.py` written first): collection error,
+`InvalidInput` missing. With a temporary `InvalidInput = ValueError` stand-in:
+2 failed (`test_unexpected_value_error_is_redacted_500` `assert 422 == 500`, and the
+pending-bound case), 19 passed.
+
+GREEN: `PLATFORM_TEST_DSN=... pytest -q --cov` 118 passed, 2 skipped (the
+pinned-source re-extraction the contract job runs), 127 subtests, total coverage
+79% (gate 77), against PostgreSQL 16 (`pgserver`); `bash scripts/check.sh` 67 tests
+OK; `ruff check .` and `mypy` clean (locked `uv sync --frozen --all-extras`).
+Nothing deployed.
