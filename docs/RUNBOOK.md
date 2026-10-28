@@ -35,10 +35,10 @@ it must have explicit workspace authorization and queues as described in
 finishes before the process closes its pool. Set handler timeouts and a process
 termination grace appropriate to that bound.
 
-Build `Dockerfile` only after pinning a published core wheel/revision in the
-release dependency lock. The package pins `platform-backend-core==0.1.0`;
-the parent release supplies the offline wheel bundle and immutable artifact digests. This checkout does not
-invent a published artifact or download a hub checkout.
+`docker build .` works from a clean checkout (see "Container image" in
+[RUNTIME.md](RUNTIME.md)): every dependency, including `platform-backend-core`
+at its reviewed commit, comes from `uv.lock`. No wheel bundle is staged and no hub
+checkout is downloaded. Record the built image digest in the release manifest.
 
 ## Diagnose and recover
 

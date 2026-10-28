@@ -23,10 +23,10 @@ jobs:
         python-version: ["3.11", "3.12"]
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -34,7 +34,7 @@ jobs:
         run: python3 scripts/check_schema_pin.py
 
       - name: Check out pinned platform-ops-cli source (BOO-165, public, read-only)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: bookchaowalit/platform-ops-cli
           ref: f372959408a4438eb41ef1a1ad3c8a53454dca0e
@@ -69,3 +69,22 @@ jobs:
 
   security:
     uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@87dc5e1c7e0416886a6371d5a101bb2ccba38edd # v1.1.1
+
+  image:
+    # Proves the Dockerfile builds from a clean checkout. Nothing is pushed or deployed.
+    name: Container image (build only, no push)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Build container image (no push)
+        run: docker build --pull --tag platform-workflow:ci .
+
+      - name: Image imports the service and runs as non-root
+        run: |
+          docker run --rm platform-workflow:ci python -c "import platform_backend_core, platform_workflow.app"
+          test "$(docker run --rm platform-workflow:ci id -u)" != 0
