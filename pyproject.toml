@@ -20,7 +20,7 @@ platform-workflow = "platform_workflow.cli:main"
 [tool.uv.sources]
 # Not on PyPI: lock the reviewed commit CI already installs, so the resolver can never
 # pick up a same-named PyPI package (dependency confusion).
-platform-backend-core = { git = "https://github.com/bookchaowalit-backend/platform-backend-core.git", rev = "21d5f44d26220080cbed43b9807979dc84a8533a" }
+platform-backend-core = { git = "https://github.com/bookchaowalit-backend/platform-backend-core.git", rev = "dc1fa7d2693594b3c79b0b2539a83a6a9465a560" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
