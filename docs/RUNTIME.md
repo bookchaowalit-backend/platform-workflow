@@ -20,7 +20,7 @@ needed. The `Dockerfile` is two stages:
    by image digest): `uv sync --frozen --no-dev --no-editable` installs this
    service and every runtime dependency from `uv.lock` into `/opt/venv`, so
    `platform-backend-core` comes from the same reviewed commit
-   (`d00e0119c2e47da3942d9c7b4b88828953f8bc5a`) CI installs, with the lock's hashes.
+   (`88306b28228f789eecd214a11ca8a0640e9d6233`) CI installs, with the lock's hashes.
    No test or dev extras are installed.
 2. `runtime` (`python:3.12-slim`, no git, no uv): copies only `/opt/venv`, runs
    as UID/GID `65532`, `PORT=8080`, and keeps `CMD ["platform-workflow", "api"]`
