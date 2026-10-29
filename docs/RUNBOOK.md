@@ -25,6 +25,10 @@ settings; this staging does not replace the identity shadow issuer. Configure
 keys/authorization through the deployment environment, never image layers or
 repository files. Missing trust settings fail startup closed.
 
+Optional `SENTRY_DSN` turns on error reporting (unset = off); see
+`src/platform_workflow/_sentry.py` for what is scrubbed. `SENTRY_ENVIRONMENT` defaults to
+`production`.
+
 Run `platform-workflow api`, which binds `PORT` (default 8080). API pool maximum
 is `WORKFLOW_POOL_MAX` (default 8); worker default is 2. Connections across all
 replicas must remain below the database budget. `railway.toml` stages one API
