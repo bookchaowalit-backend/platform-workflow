@@ -656,7 +656,7 @@ wheels = [
 [[package]]
 name = "platform-backend-core"
 version = "0.1.0"
-source = { git = "https://github.com/bookchaowalit-backend/platform-backend-core.git?rev=21d5f44d26220080cbed43b9807979dc84a8533a#21d5f44d26220080cbed43b9807979dc84a8533a" }
+source = { git = "https://github.com/bookchaowalit-backend/platform-backend-core.git?rev=dc1fa7d2693594b3c79b0b2539a83a6a9465a560#dc1fa7d2693594b3c79b0b2539a83a6a9465a560" }
 dependencies = [
     { name = "fastapi" },
     { name = "psycopg", extra = ["binary", "pool"] },
@@ -691,7 +691,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "httpx", marker = "extra == 'test'", specifier = ">=0.27,<1" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==2.4.0" },
-    { name = "platform-backend-core", git = "https://github.com/bookchaowalit-backend/platform-backend-core.git?rev=21d5f44d26220080cbed43b9807979dc84a8533a" },
+    { name = "platform-backend-core", git = "https://github.com/bookchaowalit-backend/platform-backend-core.git?rev=dc1fa7d2693594b3c79b0b2539a83a6a9465a560" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.2,<4" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8,<10" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.1.0" },
