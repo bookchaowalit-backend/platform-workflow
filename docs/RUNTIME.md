@@ -130,9 +130,17 @@ handler cannot be forcibly interrupted by this library.
 The CLI worker is a diagnostic fixture with only `health.noop`, which returns
 `{"ok":true}`. Supply a dedicated queue containing only that job type. Real
 products embed `Worker` with their explicit handler registry. The CLI requires
-an explicit `WORKFLOW_WORKER_QUEUES` list and a bearer authorization value in
-`WORKFLOW_WORKER_AUTHORIZATION`. It verifies that token before every poll;
-expiry fails closed. Its single verified workspace bounds every database
+an explicit `WORKFLOW_WORKER_QUEUES` list and exactly one token source:
+
+- `WORKFLOW_WORKER_CLIENT_ID` and `WORKFLOW_WORKER_PRIVATE_KEY_PEM`: a
+  platform-identity service client (platform-identity `docs/SERVICE-CLIENTS.md`)
+  registered for audience `JWT_AUDIENCE` and scope `jobs:work` in this worker's
+  workspace. The worker gets its token from `<JWT_ISSUER>/v1/token` (or
+  `WORKFLOW_WORKER_TOKEN_URL`) and renews it before it expires; or
+- `WORKFLOW_WORKER_AUTHORIZATION`: a fixed bearer value, for tests and short runs.
+
+It verifies the token before every poll; an expired token, or a renewal that
+fails once the token has expired, fails closed. Its single verified workspace bounds every database
 transaction. Run separate authorized processes for additional workspaces; there
 is no global scanner, workspace discovery or BYPASSRLS credential.
 
