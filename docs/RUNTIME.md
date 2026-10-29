@@ -135,12 +135,13 @@ an explicit `WORKFLOW_WORKER_QUEUES` list and exactly one token source:
 - `WORKFLOW_WORKER_CLIENT_ID` and `WORKFLOW_WORKER_PRIVATE_KEY_PEM`: a
   platform-identity service client (platform-identity `docs/SERVICE-CLIENTS.md`)
   registered for audience `JWT_AUDIENCE` and scope `jobs:work` in this worker's
-  workspace. The worker gets its token from `<JWT_ISSUER>/v1/token` (or
-  `WORKFLOW_WORKER_TOKEN_URL`) and renews it before it expires; or
+  workspace. The worker gets its token from `<JWT_ISSUER>/v1/token` and renews
+  it before it expires. While identity cannot give it a token the worker skips
+  polls, logs `worker token unavailable` and retries every 30 s; or
 - `WORKFLOW_WORKER_AUTHORIZATION`: a fixed bearer value, for tests and short runs.
 
-It verifies the token before every poll; an expired token, or a renewal that
-fails once the token has expired, fails closed. Its single verified workspace bounds every database
+It verifies the token before every poll and never polls without a valid one. A
+fixed value that has expired or fails verification stops the process. Its single verified workspace bounds every database
 transaction. Run separate authorized processes for additional workspaces; there
 is no global scanner, workspace discovery or BYPASSRLS credential.
 

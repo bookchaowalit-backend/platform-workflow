@@ -2,9 +2,10 @@
 import argparse
 import os
 import signal
+import sys
 import threading
 
-from platform_backend_core import Database, MigrationRunner, ServiceTokenSource, TokenVerifier
+from platform_backend_core import Database, MigrationRunner, ServiceTokenError, ServiceTokenSource, TokenVerifier
 
 from .app import create_workflow_app
 from .migrations import migrations
@@ -28,24 +29,35 @@ def worker_authorization_from_env(env=os.environ, *, post=None):
     """The worker's bearer token source: exactly one of a static value or an identity service client.
 
     A service client (``WORKFLOW_WORKER_CLIENT_ID`` + ``WORKFLOW_WORKER_PRIVATE_KEY_PEM``) gets a
-    ``jobs:work`` token from identity's client_credentials grant and renews it before it expires.
+    ``jobs:work`` token from ``<issuer>/v1/token`` and renews it before it expires; identity only
+    accepts its own token endpoint as the assertion audience, so there is no separate token URL.
     """
-    static = env.get('WORKFLOW_WORKER_AUTHORIZATION')
-    client_id, private_key = env.get('WORKFLOW_WORKER_CLIENT_ID'), env.get('WORKFLOW_WORKER_PRIVATE_KEY_PEM')
+    def value(name):
+        return (env.get(name) or '').strip() or None
+    static = value('WORKFLOW_WORKER_AUTHORIZATION')
+    client_id, private_key = value('WORKFLOW_WORKER_CLIENT_ID'), value('WORKFLOW_WORKER_PRIVATE_KEY_PEM')
     if static and (client_id or private_key):
         raise ValueError('set WORKFLOW_WORKER_AUTHORIZATION or a worker service client, not both')
     if static:
         return lambda: static
     if not client_id or not private_key:
         raise ValueError('set WORKFLOW_WORKER_AUTHORIZATION, or WORKFLOW_WORKER_CLIENT_ID and WORKFLOW_WORKER_PRIVATE_KEY_PEM')
-    issuer = env.get('JWT_ISSUER') or env.get('WORKFLOW_JWT_ISSUER')
-    audience = env.get('JWT_AUDIENCE') or env.get('WORKFLOW_JWT_AUDIENCE')
-    token_url = env.get('WORKFLOW_WORKER_TOKEN_URL') or (issuer.rstrip('/') + '/v1/token' if issuer else None)
-    if not audience or not token_url:
-        raise ValueError('a worker service client needs JWT_AUDIENCE and JWT_ISSUER (or WORKFLOW_WORKER_TOKEN_URL)')
-    tokens = ServiceTokenSource(token_url=token_url, client_id=client_id, private_key_pem=private_key,
-                                audience=audience, scope='jobs:work', post=post)
+    issuer = value('JWT_ISSUER') or value('WORKFLOW_JWT_ISSUER')
+    audience = value('JWT_AUDIENCE') or value('WORKFLOW_JWT_AUDIENCE')
+    if not audience or not issuer:
+        raise ValueError('a worker service client needs JWT_ISSUER and JWT_AUDIENCE')
+    tokens = ServiceTokenSource(token_url=issuer.rstrip('/') + '/v1/token', client_id=client_id,
+                                private_key_pem=private_key, audience=audience, scope='jobs:work', post=post)
     return tokens.authorization
+
+
+def worker_principal(verifier, authorization):
+    """The verified principal for this poll, or None when identity has no token for us right now."""
+    try:
+        return verifier.verify(authorization())
+    except ServiceTokenError as error:
+        print(f'worker token unavailable: {error}; retrying', file=sys.stderr)  # message never holds the token
+        return None
 
 
 def app_factory():
@@ -74,7 +86,10 @@ def main():
             signal.signal(sig,lambda *_:stop.set())
         try:
             while not stop.is_set():
-                principal = verifier.verify(authorization())
+                principal = worker_principal(verifier, authorization)
+                if principal is None:
+                    stop.wait(30)
+                    continue
                 # Explicit built-in handler has no external effects. Embed Worker for application handlers.
                 worker = Worker(JobStore(database),principal,{'health.noop':lambda payload: {'ok':True}},owner=os.environ.get('WORKFLOW_WORKER_OWNER','worker'),
                                 queues=tuple(os.environ['WORKFLOW_WORKER_QUEUES'].split(',')))
