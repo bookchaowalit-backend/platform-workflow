@@ -7,7 +7,9 @@ from fastapi import Depends, Header, Query
 from fastapi.responses import JSONResponse
 from platform_backend_core import create_app, require_scope
 from pydantic import BaseModel, ConfigDict, Field
+from starlette.middleware import Middleware
 
+from ._sentry import CaptureErrors
 from .store import Conflict, InvalidInput, JobStore, NotFound, PermissionDenied
 
 
@@ -51,6 +53,8 @@ def public_job(row):
 
 def create_workflow_app(database, verifier):
     app = create_app('platform-workflow', database, verifier, max_body_bytes=100000)
+    # Last in the list = innermost: inside the core boundary that turns errors into a 500.
+    app.user_middleware.append(Middleware(CaptureErrors))
     store = JobStore(database)
     app.state.job_store = store
     # Replace the shared connectivity probe with this service's schema gate.
