@@ -34,6 +34,8 @@ core อ่านจาก clone ของ `bookchaowalit-backend/platform-backe
 | 21 | Incident response | done (+ reused `docs/RUNBOOK.md`) | [21-incident-response.md](21-incident-response.md) | `docs/RUNBOOK.md`, `store.py`, `_sentry.py`, ops record |
 | 22 | DORA | done (5/5 as git/gh proxies; real deploys not visible) | [22-dora.md](22-dora.md) | `git log`, `gh run list`, `gh pr list` |
 
+สรุปสถาปัตยกรรมระดับ docpack: [`DOCPACK/02-architecture.md`](../../DOCPACK/02-architecture.md) (2026-11-04)
+
 ## ADR list
 
 - [ADR-0001](08-adr/ADR-0001-fastapi-on-pinned-platform-backend-core.md) FastAPI บน `platform-backend-core` ที่ pin commit
