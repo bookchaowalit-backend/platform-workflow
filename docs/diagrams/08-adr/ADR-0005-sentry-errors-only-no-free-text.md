@@ -12,7 +12,7 @@ service ถือ recipient, address และ phone ใน payload; PR #7–#18
 - Sentry เปิดเมื่อมี `SENTRY_DSN` เท่านั้น; `traces_sample_rate=None`, `trace_propagation_targets=[]`, `send_default_pii=False`, `include_local_variables=False`, `max_request_body_size="never"`, logging integration ปิด
 - `_scrub_event` ทิ้ง exception value, message, logentry, breadcrumbs, request (เหลือ method), extra, user, dynamic sampling context
 - `CaptureErrors` เป็น ASGI layer ในสุด เพราะ core `_Boundary` แปลง exception เป็น 500 ก่อนถึง integration ของ Sentry; ไม่สร้าง event ถ้าไม่มี client/transport
-- worker/CLI ใช้ `capture()`
+- gap: worker/CLI ไม่เรียก `capture()` (`worker.py`, `cli.py`); handler ที่ล้มถูกบันทึกเป็น `handler_failed` ใน attempt history เท่านั้น
 
 ## Consequences
 

@@ -12,7 +12,7 @@ flowchart LR
   end
   subgraph WRK["Worker CLI"]
     WLOG["stderr: worker token unavailable"]
-    WCAP["capture()"]
+    WCAP["gap: no capture() in worker.py or cli.py; handler_failed only in attempt history"]
   end
   BND --> MET
   BND --> LOG
