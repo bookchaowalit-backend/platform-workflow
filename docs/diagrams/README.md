@@ -16,9 +16,9 @@ core อ่านจาก clone ของ `bookchaowalit-backend/platform-backe
 | 03 | User flows (API call flows) | done | [03-user-flows.md](03-user-flows.md) | `app.py`, `cli.py`, `worker.py`, core `service_token.py`, `docs/RUNTIME.md` |
 | 04 | Traceability (RTM) | done | [04-traceability.md](04-traceability.md) | `PRODUCT.md`, `contract.json`, `docs/RUNTIME.md`, `tests/**`, `check.yml` |
 | 05 | C4 Context | done | [05-c4-context.md](05-c4-context.md) | `cli.py`, `app.py`, `_sentry.py`, `contract.json`, ops record |
-| 06 | C4 Container | done | [06-c4-container.md](06-c4-container.md) | `Dockerfile`, `railway.toml`, `cli.py`, `migrations.py`, core `migrations.py` |
+| 06 | C4 Container | done | [06-c4-container.md](06-c4-container.md) | `Dockerfile`, `.railway/railway.ts`, `cli.py`, `migrations.py`, core `migrations.py` |
 | 07 | C4 Component | done | [07-c4-component.md](07-c4-component.md) | `src/platform_workflow/*.py`, core `http.py` / `auth.py` / `db.py` |
-| 08 | ADRs | done (5) | [08-adr/](08-adr/) | `pyproject.toml`, `uv.lock`, `migrations.py`, `store.py`, `railway.toml`, `_sentry.py`, git log, ops record |
+| 08 | ADRs | done (5) | [08-adr/](08-adr/) | `pyproject.toml`, `uv.lock`, `migrations.py`, `store.py`, `.railway/railway.ts`, `_sentry.py`, git log, ops record |
 | 09 | ERD | done | [09-erd.md](09-erd.md) | `migrations.py`, core `migrations.py` / `db.py`, `docs/RUNBOOK.md` |
 | 10 | Sequences | done (4) | [10-sequences.md](10-sequences.md) | `app.py`, `store.py`, `worker.py`, `cli.py`, core |
 | 11 | State machines | done (job, attempt, worker) | [11-state-machines.md](11-state-machines.md) | `store.py`, `migrations.py`, `cli.py` |
@@ -26,7 +26,7 @@ core อ่านจาก clone ของ `bookchaowalit-backend/platform-backe
 | 13 | Threat model | done | [13-threat-model.md](13-threat-model.md) | `app.py`, `store.py`, `cli.py`, `_sentry.py`, `migrations.py`, core, tests |
 | 14 | Backup & DR | done (RTO/RPO not defined) | [14-backup-dr.md](14-backup-dr.md) | `docs/RUNBOOK.md`, `migrations.py`, ops record |
 | 15 | CI/CD pipeline | done | [15-cicd-pipeline.md](15-cicd-pipeline.md) | `check.yml`, `scripts/check.sh`, platform-ci-workflows `ci-python.yml` / `security.yml` @ `87dc5e1c` |
-| 16 | Deployment | done | [16-deployment.md](16-deployment.md) | `railway.toml`, `Dockerfile`, `cli.py`, ops record |
+| 16 | Deployment | done | [16-deployment.md](16-deployment.md) | `.railway/railway.ts`, `Dockerfile`, `cli.py`, ops record |
 | 17 | Test coverage matrix | done | [17-test-coverage-matrix.md](17-test-coverage-matrix.md) | `tests/**`, `check.yml`, `docs/RUNTIME.md` |
 | 18 | Git & release workflow | done | [18-git-release-workflow.md](18-git-release-workflow.md) | `git log --first-parent`, `gh pr list` |
 | 19 | Service dependency map | done | [19-service-dependency-map.md](19-service-dependency-map.md) | `cli.py`, `app.py`, `pyproject.toml`, `Dockerfile`, `check.yml`, ops record |

@@ -27,7 +27,7 @@ flowchart LR
   DB[("workflow_attempts: per-attempt history")] -->|"GET /v1/jobs/id/attempts"| OPS["Operator with workspace token"]
 ```
 
-Sources: `src/platform_workflow/_sentry.py`, `src/platform_workflow/app.py`, `src/platform_workflow/cli.py`, `platform-backend-core@dc1fa7d:src/platform_backend_core/http.py` (`_LOG.info`, metrics), `railway.toml`, `docs/RUNBOOK.md`, ops record: book-platforms-status (2026-11-03) (uptime worker hourly `/readyz`, Sentry project, "Observability repo is an instrumentation library ... owner decision pending (a scraper would keep sleeping services awake)")
+Sources: `src/platform_workflow/_sentry.py`, `src/platform_workflow/app.py`, `src/platform_workflow/cli.py`, `platform-backend-core@dc1fa7d:src/platform_backend_core/http.py` (`_LOG.info`, metrics), `.railway/railway.ts`, `docs/RUNBOOK.md`, ops record: book-platforms-status (2026-11-03) (uptime worker hourly `/readyz`, Sentry project, "Observability repo is an instrumentation library ... owner decision pending (a scraper would keep sleeping services awake)")
 
 ## What is watched
 

@@ -24,7 +24,7 @@ needed. The `Dockerfile` is two stages:
    No test or dev extras are installed.
 2. `runtime` (`python:3.12-slim`, no git, no uv): copies only `/opt/venv`, runs
    as UID/GID `65532`, `PORT=8080`, and keeps `CMD ["platform-workflow", "api"]`
-   (`railway.toml` sets the same start command). Run `migrate` and workers as
+   (`.railway/railway.ts` sets the same start command). Run `migrate` and workers as
    separate services or one-offs from the same image with a command override.
 
 `.dockerignore` keeps `.git`, `.venv`, tests, build output and `.env*` out of the

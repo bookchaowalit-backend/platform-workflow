@@ -1,6 +1,6 @@
 # 06 — C4 Container
 
-image เดียว (`Dockerfile`) รันได้ 3 command: `api` (default CMD และ `railway.toml` startCommand), `worker`, `migrate`
+image เดียว (`Dockerfile`) รันได้ 3 command: `api` (default CMD และ `.railway/railway.ts` startCommand), `worker`, `migrate`
 
 ```mermaid
 C4Container
@@ -24,7 +24,7 @@ C4Container
   Rel(worker, sentry, "capture", "HTTPS")
 ```
 
-Sources: `Dockerfile`, `railway.toml`, `src/platform_workflow/cli.py`, `src/platform_workflow/migrations.py`, `docs/RUNBOOK.md`, `docs/RUNTIME.md` ("Container image", "Workers"), `platform-backend-core@dc1fa7d:src/platform_backend_core/migrations.py` (`platform_schema_migrations`), ops record: book-platforms-status (2026-11-03) ("The workflow worker token" in owner follow-ups)
+Sources: `Dockerfile`, `.railway/railway.ts`, `src/platform_workflow/cli.py`, `src/platform_workflow/migrations.py`, `docs/RUNBOOK.md`, `docs/RUNTIME.md` ("Container image", "Workers"), `platform-backend-core@dc1fa7d:src/platform_backend_core/migrations.py` (`platform_schema_migrations`), ops record: book-platforms-status (2026-11-03) ("The workflow worker token" in owner follow-ups)
 
 ## Open questions
 

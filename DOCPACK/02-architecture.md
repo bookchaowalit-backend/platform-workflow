@@ -24,10 +24,10 @@ related: 00-product-card.md, ../docs/diagrams/README.md, ../docs/RUNTIME.md, ../
 |---|---|---|
 | ขอบเขตระบบ | microservice ของ Book Platform ที่เป็นเจ้าของ **execution state** ของ job; business invariant อยู่ที่ platform ผู้เรียก | `contract.json`, `docs/gates/BOO-165-scheduler-ownership-retry-history.md` (อ้าง platform-repository-split) |
 | รูปแบบ async | durable job queue บน PostgreSQL (ไม่ใช้ broker): `SELECT … FOR UPDATE SKIP LOCKED`, lease + `lease_token` fencing, at-least-once | `store.py`, [ADR-0002](../docs/diagrams/08-adr/ADR-0002-postgres-durable-queue-with-lease-fencing.md) |
-| โครงภายใน | image เดียว, CLI สาม command: `api` (FastAPI), `worker` (sequential poller ที่ใช้ `JobStore` ตรงกับ DB), `migrate` | `cli.py`, `Dockerfile`, `railway.toml` |
+| โครงภายใน | image เดียว, CLI สาม command: `api` (FastAPI), `worker` (sequential poller ที่ใช้ `JobStore` ตรงกับ DB), `migrate` | `cli.py`, `Dockerfile`, `.railway/railway.ts` |
 | shared runtime | `platform-backend-core` pin commit `dc1fa7d` (มี `ServiceTokenSource`) — ต่างจาก service อื่นที่ยัง pin `21d5f44` | `pyproject.toml` `[tool.uv.sources]`, [ADR-0001](../docs/diagrams/08-adr/ADR-0001-fastapi-on-pinned-platform-backend-core.md) |
 | multi-tenancy | JWT `ws` ที่ verify แล้ว + FORCE RLS + runtime role ที่ bypass RLS ไม่ได้; worker ไม่รับ workspace จาก env | `cli.py` comment ใน `main()`, [ADR-0003](../docs/diagrams/08-adr/ADR-0003-workspace-isolation-jwt-ws-and-force-rls.md) |
-| hosting | Railway Docker serverless, healthcheck `/readyz`, CLI deploy | `railway.toml`, [ADR-0004](../docs/diagrams/08-adr/ADR-0004-railway-docker-serverless-cli-deploy.md) |
+| hosting | Railway Docker serverless, healthcheck `/readyz`, CLI deploy | `.railway/railway.ts`, [ADR-0004](../docs/diagrams/08-adr/ADR-0004-railway-docker-serverless-cli-deploy.md) |
 
 ## 2. Quality-attribute scenarios
 
@@ -41,7 +41,7 @@ related: 00-product-card.md, ../docs/diagrams/README.md, ../docs/RUNTIME.md, ../
 | Security / authz | producer ไม่มี `jobs:write` enqueue, หรือ token ไม่มี `jobs:work` เรียก `/v1/worker/*` → 403 | `require_scope` ทุก route + `_scope` ใน store | `app.py`, `store.py` |
 | Security / worker token | worker ได้ token `jobs:work` จาก identity `client_credentials` (`private_key_jwt`) และ verify ใหม่ก่อนทุก poll; identity ล่ม → รอ 30 s ไม่ crash | `ServiceTokenSource`, `worker_principal` | `cli.py`, `tests/runtime/test_worker_authorization.py` |
 | Input bounds | payload เกิน 65,536 bytes หรือ result เกิน 16,384 bytes (JSONB) → ปฏิเสธ | `_json`, `_database_json_bound` | `store.py` |
-| Availability | deploy ใหม่ที่ DB ยังไม่พร้อม → Railway ไม่ตัดไป instance ใหม่ | `healthcheckPath = "/readyz"`, timeout 20 s, restart ON_FAILURE ×3 | `railway.toml`, `app.py` (`readyz`) |
+| Availability | deploy ใหม่ที่ DB ยังไม่พร้อม → Railway ไม่ตัดไป instance ใหม่ | `healthcheckPath = "/readyz"`, timeout 20 s, restart ON_FAILURE ×3 | `.railway/railway.ts`, `app.py` (`readyz`) |
 | Privacy (telemetry) | handler exception มีข้อมูลผู้ใช้ → Sentry ไม่ได้รับข้อความ; job เก็บแค่ error code ปลอดภัย (`handler_failed`, `unknown_handler`) | `_scrub_event`, `CaptureErrors`, `_name(error_code)` | `_sentry.py`, `worker.py`, [ADR-0005](../docs/diagrams/08-adr/ADR-0005-sentry-errors-only-no-free-text.md) |
 
 ## 3. Context diagram
@@ -84,7 +84,7 @@ Component view (C4 level 3): [07-c4-component.md](../docs/diagrams/07-c4-compone
 | DB client | psycopg[binary,pool] `>=3.2,<4` | `pyproject.toml` |
 | Shared core | `platform-backend-core==0.1.0` git rev `dc1fa7d2693594b3c79b0b2539a83a6a9465a560` | `pyproject.toml`, `uv.lock` |
 | Observability | sentry-sdk `>=2.72,<3`, `/metrics` ของ core | `pyproject.toml` |
-| Build | 2-stage `python:3.12-slim`, `uv sync --frozen --no-dev`, user `65532:65532`, builder `DOCKERFILE` | `Dockerfile`, `railway.toml` |
+| Build | 2-stage `python:3.12-slim`, `uv sync --frozen --no-dev`, user `65532:65532`, builder `DOCKERFILE` | `Dockerfile`, `.railway/railway.ts` |
 
 ## 6. Data stores
 
@@ -189,7 +189,7 @@ flowchart TB
 ## แหล่งข้อมูล
 
 - repo `platform-workflow` ที่ `origin/main` `6471458` (2026-11-04)
-- `pyproject.toml`, `Dockerfile`, `railway.toml`, `uv.lock`, `contract.json`, `DOCPACK/docpack.yaml`, `DOCPACK/00-product-card.md`
+- `pyproject.toml`, `Dockerfile`, `.railway/railway.ts`, `uv.lock`, `contract.json`, `DOCPACK/docpack.yaml`, `DOCPACK/00-product-card.md`
 - `src/platform_workflow/cli.py`, `app.py`, `store.py`, `worker.py`, `migrations.py`, `_sentry.py`
 - `.github/workflows/check.yml`, `scripts/*.py`, `scripts/check.sh`, `tests/**`
 - `docs/RUNTIME.md`, `docs/RUNBOOK.md`, `docs/CONTRACT-SURFACE.md`, `docs/UPGRADE-PLAN.md`, `docs/gates/BOO-165-scheduler-ownership-retry-history.md`, `docs/diagrams/*` (pack ที่ `301da88`, แก้ `6471458`)

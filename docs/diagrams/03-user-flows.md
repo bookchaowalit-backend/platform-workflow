@@ -62,7 +62,7 @@ flowchart LR
   R -->|"503 unavailable"| FIX["Missing migration or grants"]
 ```
 
-Sources: `docs/RUNBOOK.md`, `src/platform_workflow/cli.py`, `src/platform_workflow/app.py` (`readyz`), `railway.toml`
+Sources: `docs/RUNBOOK.md`, `src/platform_workflow/cli.py`, `src/platform_workflow/app.py` (`readyz`), `.railway/railway.ts`
 
 ## Open questions
 

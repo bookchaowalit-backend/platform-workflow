@@ -30,7 +30,7 @@ flowchart TB
   HUB["Remote MCP hub cell platform-workflow"] --> SVC
 ```
 
-Sources: `railway.toml`, `Dockerfile`, `src/platform_workflow/cli.py`, `docs/RUNBOOK.md`, ops record: book-platforms-status (2026-11-03) (service name, region, sleep, Neon project, Infisical path, Sentry project, uptime worker, MCP hub, identity issuer `https://identity-api-production-fad1.up.railway.app`, audience pattern `<svc>-api`, "The workflow worker token" follow-up)
+Sources: `.railway/railway.ts`, `Dockerfile`, `src/platform_workflow/cli.py`, `docs/RUNBOOK.md`, ops record: book-platforms-status (2026-11-03) (service name, region, sleep, Neon project, Infisical path, Sentry project, uptime worker, MCP hub, identity issuer `https://identity-api-production-fad1.up.railway.app`, audience pattern `<svc>-api`, "The workflow worker token" follow-up)
 
 ## Health endpoints
 

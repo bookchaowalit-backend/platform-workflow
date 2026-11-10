@@ -31,7 +31,7 @@ Optional `SENTRY_DSN` turns on error reporting (unset = off); see
 
 Run `platform-workflow api`, which binds `PORT` (default 8080). API pool maximum
 is `WORKFLOW_POOL_MAX` (default 8); worker default is 2. Connections across all
-replicas must remain below the database budget. `railway.toml` stages one API
+replicas must remain below the database budget. `.railway/railway.ts` stages one API
 replica with `/readyz`; replicas can increase independently after connection,
 load, migration and backup gates are proven. A worker is a separate service;
 it must have explicit workspace authorization and queues as described in

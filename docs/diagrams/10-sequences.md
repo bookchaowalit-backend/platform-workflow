@@ -113,4 +113,4 @@ sequenceDiagram
   end
 ```
 
-Sources: `src/platform_workflow/app.py`, `railway.toml`, ops record: book-platforms-status (2026-11-03) (uptime worker hourly `/readyz`)
+Sources: `src/platform_workflow/app.py`, `.railway/railway.ts`, ops record: book-platforms-status (2026-11-03) (uptime worker hourly `/readyz`)

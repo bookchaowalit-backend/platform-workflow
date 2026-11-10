@@ -32,10 +32,10 @@ can later replace the `infra/tasks` implementation recorded in the parent regist
 
 ## Limits
 
-- Not deployed: `Dockerfile` and `railway.toml` are staged release assets; no
+- Not deployed: `Dockerfile` and `.railway/railway.ts` are staged release assets; no
   Railway service or other host runs them, and the existing task commands are not
   replaced. No production cutover gate has been passed.
 - The D8 `codex/shared-infrastructure-20261015` pull request (#1) was merged into
   `main` as `1429550`; it added the runtime above.
 
-Sentry waiver: Dockerfile and railway.toml are staged only; no Railway service or other host runs this code, so there is no runtime to report from.
+Sentry waiver: Dockerfile and .railway/railway.ts are staged only; no Railway service or other host runs this code, so there is no runtime to report from.
