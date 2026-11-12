@@ -61,8 +61,13 @@ def worker_principal(verifier, authorization):
 
 
 def app_factory():
+    from . import gateway
+
     db = Database(os.environ['DATABASE_URL'],max_size=int(os.environ.get('WORKFLOW_POOL_MAX','8')))
-    return create_workflow_app(db,verifier_from_env())
+    app = create_workflow_app(db,verifier_from_env())
+    # SPEC-002 (platform-api-gateway): only calls that came through the edge gateway.
+    gateway.install(app, gateway.GatewayCheck.from_env('platform-workflow'))
+    return app
 
 
 def main():
