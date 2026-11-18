@@ -17,7 +17,7 @@
 | POST | `/v1/worker/jobs/{job_id}/fail` | `jobs:work` | fenced; ซ้ำหลัง fail → 409 (lease ถูกปล่อยแล้ว) | 200, 409, 422 |
 | GET | `/healthz` | none | – | 200 `{status: ok}` |
 | GET | `/readyz` | none | – | 200 / 503 |
-| GET | `/metrics` | none | – | Prometheus text: `platform_http_requests_total{route,status}`, `platform_http_request_duration_seconds_sum` |
+| GET | `/metrics` | `metrics:read` | – | Prometheus text: `platform_http_requests_total{route,status}`, `platform_http_request_duration_seconds_sum` |
 
 ทุก route: body > 100000 bytes → 413, เกิน 30 s → 504, exception อื่น → redacted 500, ทุก response มี `x-request-id`; request schema ผิด → 422 `invalid request`
 

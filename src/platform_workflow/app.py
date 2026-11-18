@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import Depends, Header, Query
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from platform_backend_core import create_app, require_scope
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware import Middleware
@@ -51,8 +52,17 @@ def public_job(row):
     return {k:v for k,v in row.items() if k not in {'lease_token','lease_owner','fingerprint','idempotency_key','operation'}}
 
 
+NOT_PUBLIC = frozenset({'/docs', '/docs/oauth2-redirect', '/redoc', '/metrics'})
+
+
 def create_workflow_app(database, verifier):
     app = create_app('platform-workflow', database, verifier, max_body_bytes=100000)
+    # Only probes, the API and its schema are public: no docs UI, and metrics need a scope.
+    # /openapi.json stays public because the MCP hub's describe_cell reads it without a token.
+    metrics = next(route.endpoint for route in app.router.routes if isinstance(route, APIRoute) and route.path == '/metrics')
+    app.router.routes[:] = [route for route in app.router.routes if getattr(route, 'path', None) not in NOT_PUBLIC]
+    app.docs_url = app.redoc_url = None
+    app.add_api_route('/metrics', metrics, methods=['GET'], include_in_schema=False, dependencies=[Depends(require_scope('metrics:read'))])
     # Last in the list = innermost: inside the core boundary that turns errors into a 500.
     app.user_middleware.append(Middleware(CaptureErrors))
     store = JobStore(database)

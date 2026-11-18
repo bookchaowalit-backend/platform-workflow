@@ -27,7 +27,7 @@ flowchart LR
     SEN["Sentry project"]
   end
   CALLER -->|"HTTPS JSON"| BND
-  ANON -->|"/healthz /readyz /metrics"| BND
+  ANON -->|"/healthz /readyz /openapi.json"| BND
   BND --> AUTH
   AUTH -->|"fetch keys"| JWKS
   AUTH --> APP
@@ -47,7 +47,7 @@ Sources: `src/platform_workflow/app.py`, `src/platform_workflow/store.py`, `src/
 | API edge | **S** forged token | RS256 only, `iss`/`aud` strict, require `sub ws iat exp jti`, lifetime ≤ 3600 s, reject `del`/`obo`, `crit` (core `auth.py`) | no revocation check (core comment: "cannot enforce delegation status or revocation") |
 | API edge | **T** oversized / malformed body | 100000-byte cap, `extra='forbid'`, JSON NUL/surrogate rejection, JSONB size re-check (`app.py`, `store.py`) | – |
 | API edge | **D** request flood | 30 s timeout, pool bound, 10000 pending per workspace (`store.py`) | no rate limit in repo; gateway in front not confirmed |
-| API edge | **I** `/metrics` public | route templates only, no raw paths (core `http.py`) | unauthenticated on public domain |
+| API edge | **I** `/metrics` | route templates only, no raw paths (core `http.py`); requires `metrics:read` (`app.py`) | token ที่มี `metrics:read`; ไม่มี docs UI |
 | Routes / JobStore | **E** cross-workspace access | `ws` from token only, exact scopes, `_scope` re-check in store | – |
 | Routes / JobStore | **R** who did what | `x-request-id` log line, `workflow_attempts` owner + lease_token | `actor` (`sub`) not stored on job or attempt |
 | Routes / JobStore | **I** lease secret leak | `public_job` strips `lease_token`, `lease_owner`, `fingerprint`, `idempotency_key`; attempts strip token/owner | claim/renew responses return full row incl. `lease_token` to the worker (by design) |

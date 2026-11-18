@@ -2,7 +2,7 @@
 
 actor คือสิ่งที่ service ตรวจจริง: JWT ที่ verify แล้ว (issuer, audience, `ws` workspace UUID) และ **exact scope** 3 ตัว `jobs:read`, `jobs:write`, `jobs:work`
 ไม่มี owner/wildcard override (`docs/RUNTIME.md`) และ token ที่มี claim `del`/`obo` ถูกปฏิเสธ (core `TokenVerifier`)
-endpoint ที่ไม่ต้อง auth คือ `/healthz`, `/readyz`, `/metrics`
+endpoint ที่ไม่ต้อง auth คือ `/healthz`, `/readyz`, `/openapi.json`; `/metrics` ต้องมี scope `metrics:read` และ `/docs`, `/redoc` ไม่ถูกให้บริการ
 
 ```mermaid
 flowchart LR
@@ -51,7 +51,7 @@ Sources: `src/platform_workflow/app.py`, `src/platform_workflow/store.py` (`_sco
 | List, Get, Attempts | `jobs:read` | เหมือนกัน |
 | Claim, Renew, Complete, Fail | `jobs:work` | เหมือนกัน |
 | Migrate | ไม่มี JWT; ใช้ `DATABASE_URL` ของ migration role | `cli.py migrate` |
-| Health/ready/metrics | ไม่มี | core + `app.py` `/readyz` |
+| Health/ready/metrics | health/ready ไม่มี; `/metrics` ต้องมี `metrics:read` | core + `app.py` `/readyz` |
 
 ทุก use case ที่มี scope ทำงานใน workspace เดียวจาก claim `ws` เท่านั้น; body ที่มี field แปลก (เช่น workspace) ถูกปฏิเสธเพราะ `extra='forbid'`
 

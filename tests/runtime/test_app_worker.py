@@ -140,3 +140,34 @@ def test_readiness_requires_each_runtime_table_privilege(database, table, privil
             with db.transaction(uuid4()) as conn:
                 conn.execute(sql.SQL('GRANT {} ON {} TO {}').format(sql.SQL(privilege),sql.Identifier(table),sql.Identifier(role)))
         assert client.get('/readyz').status_code == 200
+
+
+def test_docs_ui_is_gone_metrics_needs_scope_schema_and_probes_stay_public():
+    class NoDatabase:
+        def ready(self):
+            return False
+
+        def close(self):
+            pass
+
+        def transaction(self, workspace):
+            raise AssertionError('database must not be reached')
+
+    private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public = private.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+    verifier = TokenVerifier(issuer='https://test.invalid', audience='workflow', public_key=public)
+
+    def auth(scopes):
+        now = datetime.now(UTC)
+        token = jwt.encode({'sub':str(uuid4()), 'ws':str(uuid4()),'scope':' '.join(scopes),
+            'iss':'https://test.invalid','aud':'workflow','iat':now,'exp':now+timedelta(minutes=5),'jti':str(uuid4())}, private, algorithm='RS256')
+        return {'Authorization':'Bearer '+token}
+
+    with TestClient(create_workflow_app(NoDatabase(), verifier)) as client:
+        for path in ('/docs', '/docs/oauth2-redirect', '/redoc'):
+            assert client.get(path).status_code == 404, path
+        assert client.get('/metrics').status_code == 401
+        assert client.get('/metrics', headers=auth(['jobs:read'])).status_code == 403
+        assert client.get('/metrics', headers=auth(['metrics:read'])).status_code == 200
+        assert client.get('/healthz').status_code == 200
+        assert client.get('/openapi.json').status_code == 200
